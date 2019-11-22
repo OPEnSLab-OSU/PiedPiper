@@ -8,18 +8,21 @@
 #define sd 1
 #define card_select 10
 #define ampAddress 0x4B
+#define clock_pin 11
+#define latch_pin 10
+#define signal_pin 9
 piedPiper p;
 RTC_PCF8523 rtc;
 Adafruit_NeoPixel indicator(1,8,NEO_GRB + NEO_KHZ800);
 File data;
 
 void setup() {
-  #if DEBUG or DEBUG_SIGNAL
+  #if DEBUG or DEBUG_SIGNAL   //turns on built in neopixel for visual debugging
     indicator.begin();
     indicator.show();
   #endif
   if(!rtc.begin()){
-    Serial.println("RTC missing");
+    Serial.println("RTC missing");  //initializes rtc 
     while(1);
   }
   if (! rtc.initialized()) {
@@ -32,11 +35,17 @@ void setup() {
     while(!SD.begin(card_select)){
       Serial.println("Missing SD card");
       delay(100);
-      indicator.setPixelColor(0,0,0,128);
-      indicator.show();
+      #if DEBUG or DEBUG_SIGNAL
+        indicator.begin();
+        indicator.setPixelColor(0,0,0,128);
+        indicator.show();
+      #endif
     } 
   #endif
-    pinMode(10,OUTPUT);
+    pinMode(latch_pin,OUTPUT);
+    pinMode(clock_pin,OUTPUT);    //initialize pins for shift register
+    pinMode(signal_pin,OUTPUT);   //pin that will send serial data
+ 
     Serial.begin(115200); 
 }
 
@@ -48,7 +57,8 @@ void loop(){
   int t1;
   DateTime now = rtc.now();
  if(p.getDetected()==1){
-  t1=millis(); //set t1 time for mimic signal timing, resets each time a bug is detected
+  t1=millis();  //set t1 time for mimic signal timing, resets each time a bug is detected
+  p.playback(0,clock_pin,latch_pin,signal_pin);
   count++;
   Serial.println("Playing Mimic Signal");
   #if DEBUG or DEBUG_SIGNAL
@@ -85,11 +95,9 @@ void loop(){
  }
 
   p.insectDetection(); //run insect detection algorithm
- // p.countPeaks();
  #if DEBUG
   p.print_all(); //prints all gathered data from audio signal
  #endif
-// 
-// if(millis()-t1 > 10000)
-//  digitalWrite(10,HIGH); //turn off signal after set time of playing without any response
+ if(t1 - millis() > PLAYBACK_TIME*1000)
+  p.playback(10,clock_pin,latch_pin,signal_pin);
 }

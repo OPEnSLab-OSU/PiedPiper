@@ -18,17 +18,17 @@
 
 #define CHANNEL A2 //sets analog input
 #define samples 512 //set # of samples; must be a power of two
-#define bufferSize 50
-#define AMBIENCE 200 //set level of ambient noise
+#define bufferSize 30
+#define AMBIENCE 750 //set level of ambient noise
 #define upperFreq 250 //set frequency bounds for insect
-#define lowerFreq 130
-#define upperPeak 5 //set peak bounds for insect
+#define lowerFreq 110
+#define upperPeak 4 //set peak bounds for insect
 #define lowerPeak 2
-#define peakThreshold 0.9  //set how sensitive the peak detection is
-#define lowerThreshold 0.75
+#define peakThreshold 0.99 //set how sensitive the peak detection is
+#define lowerThreshold 0.98
 #define PLAYBACK_TIME 5    //set how long the system will playback mimc signal(seconds)
-#define DEBUG_SIGNAL 1
-#define DEBUG 0
+#define DEBUG_SIGNAL 0
+#define DEBUG 1
 /*****************************************************/
  
 
@@ -51,6 +51,7 @@ private:
 		double domFreq;
     
 public:
+    
 		piedPiper();
 		void sampleFreq();
 		void printFreq();

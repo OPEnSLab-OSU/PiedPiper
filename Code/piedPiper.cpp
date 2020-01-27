@@ -135,21 +135,23 @@ bool piedPiper::checkSilence(){
  * Sets detected variable true if end frequency > start frequency
  ******************************************************************/
 void piedPiper::checkFrequency(){
+  Serial.println("Check Frequency is Being Run");
   sampleFreq(); //samples signal to calculate frequency
   int init_freq = domFreq; //sets start of signal frequency
   while(!checkSilence()){
     sampleFreq(); //samples signal while silence conditions haven't been met
-    if(domFreq < lowerFreq or domFreq >upperFreq){ //accounts for if the bug call drops off or increases past range
+ /*   if(domFreq < lowerFreq or domFreq >upperFreq){ //accounts for if the bug call drops off or increases past range
       Serial.println("Signal Exited Frequency Bounds");
+      Serial.println(domFreq);
       detected = false;
-      break;
-    }
+      return;*/
+    
   }
-  if(init_freq<domFreq) //if the end frequency > start frequency, bug has been detected
+ if(init_freq<domFreq) //if the end frequency > start frequency, bug has been detected
     detected = true;
 
-  else
-    detected = false;
+  //else
+   // detected = false;
 }
 
 /******************************************************************************
@@ -160,10 +162,11 @@ void piedPiper::checkFrequency(){
  *****************************************************************************/
 void piedPiper::insectDetection(){
   sampleFreq(); 
+  float store_freq = domFreq;
   if(domFreq<lowerFreq or domFreq>upperFreq){ //checks incoming signal until a signal appears in the set frequency range
     detected = false;
     #if DEBUG
-    Serial.println("Signal Not In Frequency Bound");
+    //Serial.println("Signal Not In Frequency Bound");
     #endif
     return;
   } //passes checkpoint if signal is between upper and lower frequency bounds
@@ -172,27 +175,27 @@ void piedPiper::insectDetection(){
   if(num_peaks < lowerPeak or num_peaks > upperPeak){ //checks if incoming signal matches peak amplitude counts of insect
     detected = false;
     #if DEBUG
-    Serial.println("Signal Not In Peak Bound");
+  //  Serial.println("Signal Not In Peak Bound");
     #endif
     return;
   } //passes checkpoint if signal has peaks/s in  peak bounds
   checkFrequency(); //checks if signal frequency increases at end of call
-  
+  domFreq = store_freq;
 }
 
 void piedPiper::playback(int mimic, int clk, int latch, int data){
-  byte bitsToSend = 0;
+ // byte bitsToSend = 0;
   if(mimic<8){
-    int mimic_byte = 255-pow(2,mimic); //negates mimic number
+    int mimic_byte = pow(2,mimic);
     digitalWrite(latch,LOW); //turns off register
-    bitWrite(bitsToSend,mimic_byte,LOW); //sets all pins besides target pin to high
-    shiftOut(data,clk,MSBFIRST,bitsToSend); //sends data to shift register
+    digitalWrite(clk,LOW);
+    shiftOut(data,clk,LSBFIRST,mimic_byte); //sends data to shift register
     digitalWrite(latch,HIGH); //turns on output
   } 
   else if(mimic == 10){
     digitalWrite(latch,LOW); //turns off register
-    bitWrite(bitsToSend,255,LOW); //sets all pins high
-    shiftOut(data,clk,MSBFIRST,bitsToSend); //sends data to shift register
+//    bitWrite(bitsToSend,255,LOW); //sets all pins high
+//    shiftOut(data,clk,MSBFIRST,bitsToSend); //sends data to shift register
     digitalWrite(latch,HIGH); //turns on output
   }
     
@@ -208,3 +211,4 @@ void piedPiper::print_all(){
   Serial.print("  Detected: ");
   Serial.println(detected);
 }
+

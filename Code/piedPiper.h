@@ -6,9 +6,7 @@
 #include <Arduino.h>
 #include <SD.h>
 #include <SPI.h>
-
-
-
+#include <Adafruit_NeoPixel.h>
 /****************************************************/
 #define SCL_INDEX 0x00
 #define SCL_TIME 0x01
@@ -19,14 +17,14 @@
 #define CHANNEL A2 //sets analog input
 #define samples 512 //set # of samples; must be a power of two
 #define bufferSize 30
-#define AMBIENCE 750 //set level of ambient noise
+#define AMBIENCE 710 //set level of ambient noise
 #define upperFreq 250 //set frequency bounds for insect
 #define lowerFreq 110
 #define upperPeak 4 //set peak bounds for insect
 #define lowerPeak 2
 #define peakThreshold 0.99 //set how sensitive the peak detection is
-#define lowerThreshold 0.98
-#define PLAYBACK_TIME 5    //set how long the system will playback mimc signal(seconds)
+#define lowerThreshold 0.95
+#define fShift 1.0         //set how much the frequency has to change for it to count as a frequency rise
 #define DEBUG_SIGNAL 0
 #define DEBUG 1
 /*****************************************************/
@@ -42,17 +40,20 @@ private:
     int upper_bound = 250;  //upper frequency range
     int lower_bound = 130;  //lower frequency range 
     float peak; //peak value of waveform for peak counting
-    int num_peaks;
+    int num_peaks;  //number of peaks per second
     int sampleBuffer[bufferSize];
-    int signalBuffer[500];
+    int signalBuffer[500];  
     int average = 0;
 		double vReal[samples];
 		double vImag[samples];
-		double domFreq;
+		double domFreq;   //dominant frequency of the incoming signal
+    bool debug;
+    bool debug_signal;
     
-public:
-    
+public:  
 		piedPiper();
+    void calibrateGain(Adafruit_NeoPixel l,int clk, int latch, int data);
+    void changeIndicator(Adafruit_NeoPixel l, int r, int g, int b);
 		void sampleFreq();
 		void printFreq();
     void getPeakVoltage();
@@ -65,6 +66,9 @@ public:
     bool checkSilence();
     bool getDetected();
     int smoothData();
+    bool getDebug();
+    bool getDebugSignal();
+    void setDebugSetting(bool d);
     
 
 };

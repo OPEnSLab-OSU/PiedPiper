@@ -3,6 +3,8 @@
 
 piedPiper::piedPiper(){
 	sampling_period_us = round(1000000*(1.0/samplingFrequency));
+  debug = 1;
+  debug_signal = 0;
  }
 
 void piedPiper::sampleFreq(){
@@ -80,15 +82,15 @@ void piedPiper::getPeakVoltage(){
       peak = signalBuffer[i]; //if the current reading is greater than peak, set peak to current reading
   }
   //Serial.println("Data Set");
-  #if DEBUG_SIGNAL
-  for(int i=0; i<500;i++){ //For visualizing the peak detection parameters
-    Serial.print(peak*peakThreshold); //prints upper value signal must pass to be declared a peak
-    Serial.print(',');
-    Serial.print(peak*lowerThreshold); //prints the value signal must pass below to count the peak
-    Serial.print(',');
-    Serial.println(signalBuffer[i]);
+  if(debug_signal){
+    for(int i=0; i<500;i++){ //For visualizing the peak detection parameters
+      Serial.print(peak*peakThreshold); //prints upper value signal must pass to be declared a peak
+      Serial.print(',');
+      Serial.print(peak*lowerThreshold); //prints the value signal must pass below to count the peak
+      Serial.print(',');
+      Serial.println(signalBuffer[i]);
+    }
   }
-  #endif
 }
 
 /***********************************************************
@@ -135,23 +137,50 @@ bool piedPiper::checkSilence(){
  * Sets detected variable true if end frequency > start frequency
  ******************************************************************/
 void piedPiper::checkFrequency(){
+  int above = 0;
+  int below = 0;
   Serial.println("Check Frequency is Being Run");
-  sampleFreq(); //samples signal to calculate frequency
+  //sampleFreq(); //samples signal to calculate frequency
   int init_freq = domFreq; //sets start of signal frequency
+  int average = 0;
   while(!checkSilence()){
-    sampleFreq(); //samples signal while silence conditions haven't been met
- /*   if(domFreq < lowerFreq or domFreq >upperFreq){ //accounts for if the bug call drops off or increases past range
-      Serial.println("Signal Exited Frequency Bounds");
-      Serial.println(domFreq);
-      detected = false;
-      return;*/
     
+    sampleFreq(); //samples signal while silence conditions haven't been met
+    if(init_freq*fShift<domFreq)
+      above++;
+    else 
+      below++;
+     average+=domFreq;
+    if(domFreq>700){
+       break;
+    }
+      
+    if(debug){
+      Serial.print("Initial Frequency: ");
+      Serial.print(init_freq);
+      Serial.print(" Dominant Frequency: ");
+      Serial.println(domFreq);
+    }
   }
- if(init_freq<domFreq) //if the end frequency > start frequency, bug has been detected
+  average = average/(above+below);
+  
+  if(debug){
+    Serial.print("Above: ");
+    Serial.print(above);
+    Serial.print(" Below: ");
+    Serial.print(below);
+    Serial.print(" Average Frequency: ");
+    Serial.println(average);
+  }
+  
+ if(above>=below && below!=0){ //if the end frequency > start frequency, bug has been detected
     detected = true;
+    return;
+ }
 
-  //else
-   // detected = false;
+  else
+    detected = false;
+    return;
 }
 
 /******************************************************************************
@@ -165,41 +194,49 @@ void piedPiper::insectDetection(){
   float store_freq = domFreq;
   if(domFreq<lowerFreq or domFreq>upperFreq){ //checks incoming signal until a signal appears in the set frequency range
     detected = false;
-    #if DEBUG
-    //Serial.println("Signal Not In Frequency Bound");
-    #endif
     return;
   } //passes checkpoint if signal is between upper and lower frequency bounds
-
   countPeaks();
   if(num_peaks < lowerPeak or num_peaks > upperPeak){ //checks if incoming signal matches peak amplitude counts of insect
     detected = false;
-    #if DEBUG
-  //  Serial.println("Signal Not In Peak Bound");
-    #endif
+    Serial.println("Outside of Peak Bounds");
     return;
   } //passes checkpoint if signal has peaks/s in  peak bounds
+  
+  domFreq = store_freq;   //set frequency to initial frequency that triggered the detection algorithm
   checkFrequency(); //checks if signal frequency increases at end of call
-  domFreq = store_freq;
+  
 }
 
 void piedPiper::playback(int mimic, int clk, int latch, int data){
- // byte bitsToSend = 0;
-  if(mimic<8){
-    int mimic_byte = pow(2,mimic);
-    digitalWrite(latch,LOW); //turns off register
-    digitalWrite(clk,LOW);
-    shiftOut(data,clk,LSBFIRST,mimic_byte); //sends data to shift register
-    digitalWrite(latch,HIGH); //turns on output
-  } 
-  else if(mimic == 10){
-    digitalWrite(latch,LOW); //turns off register
-//    bitWrite(bitsToSend,255,LOW); //sets all pins high
-//    shiftOut(data,clk,MSBFIRST,bitsToSend); //sends data to shift register
-    digitalWrite(latch,HIGH); //turns on output
-  }
+    byte bitsToSend = 0;  //byte variable for outputting to shift register
+    switch(mimic){  //maps the inputted audio # to the matching shift register #
+      case 1: mimic = 4; break;
+      case 2: mimic = 5; break;
+      case 3: mimic = 6; break;
+      case 4: mimic = 7; break;
+      case 5: mimic = 0; break;
+      case 6: mimic = 2; break;
+      case 7: mimic = 1; break;
+      case 8: mimic = 3; break;
+      default: mimic = 10; 
+        Serial.println("Playback Stopped");
+        digitalWrite(latch,LOW); //turns off register
+        digitalWrite(clk,LOW); //sets clock low indicating the start of a byte
+        shiftOut(data,clk,LSBFIRST,0); //sends data to shift register
+        digitalWrite(latch,HIGH); //turns on outputbreak;
+        return;
+    }
+    Serial.print("Playing Sound #"); Serial.println(mimic);
+    int mimic_byte = pow(2,mimic);    //sets byte to only turn on the selected pin
     
+    digitalWrite(latch,LOW); //turns off register
+    digitalWrite(clk,LOW);  //sets clock low indicating the start of a byte
+    shiftOut(data,clk,LSBFIRST,mimic_byte); //sends data to shift register
+    digitalWrite(latch,HIGH); //turns on output 
 }
+
+
 
 void piedPiper::print_all(){
   Serial.print("Dominant Frequency: ");
@@ -212,3 +249,22 @@ void piedPiper::print_all(){
   Serial.println(detected);
 }
 
+bool piedPiper::getDebug(){
+  return debug; 
+}
+
+bool piedPiper::getDebugSignal(){
+  return debug_signal;
+}
+
+void piedPiper::setDebugSetting(bool d){
+  if(d){
+    debug = 1;
+    debug_signal = 0;
+  }
+  else{
+    debug = 0;
+    debug_signal = 1;
+  } 
+  //Serial.print("Debug: "); Serial.print(debug); Serial.print(" Debug Signal: "); Serial.println(debug_signal);
+}

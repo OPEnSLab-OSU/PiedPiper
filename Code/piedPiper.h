@@ -17,7 +17,7 @@
 #define CHANNEL A2 //sets analog input
 #define samples 512 //set # of samples; must be a power of two
 #define bufferSize 30
-#define AMBIENCE 710 //set level of ambient noise
+#define AMBIENCE 550 //set level of ambient noise
 #define upperFreq 250 //set frequency bounds for insect
 #define lowerFreq 110
 #define upperPeak 4 //set peak bounds for insect

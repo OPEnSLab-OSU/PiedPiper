@@ -143,12 +143,15 @@ void piedPiper::checkFrequency(){
   //sampleFreq(); //samples signal to calculate frequency
   int init_freq = domFreq; //sets start of signal frequency
   int average = 0;
-  while(!checkSilence()){
-    
+  int t1, t2;
+  t1 = millis();
+  t2=t1;
+  while(t2-t1 < 2000 && !checkSilence()){
+    t2 = millis();
     sampleFreq(); //samples signal while silence conditions haven't been met
     if(init_freq*fShift<domFreq)
       above++;
-    else 
+    else if(domFreq < init_freq) 
       below++;
      average+=domFreq;
     if(domFreq>700){
@@ -173,7 +176,7 @@ void piedPiper::checkFrequency(){
     Serial.println(average);
   }
   
- if(above>=below && below!=0){ //if the end frequency > start frequency, bug has been detected
+ if(above>=below && below!=0 || average > init_freq){ //if the end frequency > start frequency, bug has been detected
     detected = true;
     return;
  }
@@ -210,15 +213,16 @@ void piedPiper::insectDetection(){
 
 void piedPiper::playback(int mimic, int clk, int latch, int data){
     byte bitsToSend = 0;  //byte variable for outputting to shift register
+    Serial.print("Playing Sound #"); Serial.println(mimic);
     switch(mimic){  //maps the inputted audio # to the matching shift register #
-      case 1: mimic = 4; break;
-      case 2: mimic = 5; break;
+      case 1: mimic = 7; break;
+      case 2: mimic = 0; break;
       case 3: mimic = 6; break;
-      case 4: mimic = 7; break;
-      case 5: mimic = 0; break;
-      case 6: mimic = 2; break;
-      case 7: mimic = 1; break;
-      case 8: mimic = 3; break;
+      case 4: mimic = 1; break;
+      case 5: mimic = 2; break;
+      case 6: mimic = 5; break;
+      case 7: mimic = 3; break;
+      case 8: mimic = 4; break;
       default: mimic = 10; 
         Serial.println("Playback Stopped");
         digitalWrite(latch,LOW); //turns off register
@@ -227,7 +231,7 @@ void piedPiper::playback(int mimic, int clk, int latch, int data){
         digitalWrite(latch,HIGH); //turns on outputbreak;
         return;
     }
-    Serial.print("Playing Sound #"); Serial.println(mimic);
+    
     int mimic_byte = pow(2,mimic);    //sets byte to only turn on the selected pin
     
     digitalWrite(latch,LOW); //turns off register
@@ -268,3 +272,4 @@ void piedPiper::setDebugSetting(bool d){
   } 
   //Serial.print("Debug: "); Serial.print(debug); Serial.print(" Debug Signal: "); Serial.println(debug_signal);
 }
+

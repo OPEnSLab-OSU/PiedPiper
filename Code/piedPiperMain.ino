@@ -11,7 +11,7 @@
 #define clock_pin 11
 #define latch_pin 10
 #define signal_pin 12
-#define SHTDWN 5
+#define SHTDWN 5  //active LOW shutdown pin for MAX9744 Amplifier
 #define in1 6
 #define in2 9
 #define in3 13
@@ -19,7 +19,7 @@
 #define TEST 1
 #define PLAYBACK 1
 #define PLAYBACK_TIME 10    //set how long the system will playback mimc signal(seconds)
-
+#define MAX_ADD 0x4B
 piedPiper p;
 RTC_PCF8523 rtc;
 
@@ -27,14 +27,17 @@ File data;
 Adafruit_NeoPixel indicator(1,8,NEO_GRB + NEO_KHZ800);
 bool LED_set = 0;
 
+
+
 void setup() {
-  
+  Wire.begin();
   pinMode(SHTDWN,OUTPUT);  //sets up MAX9744 amplifier shutdown pin
   pinMode(in1,INPUT_PULLUP);
   pinMode(in2,INPUT_PULLUP);
   pinMode(in3,INPUT_PULLUP);
   Serial.begin(115200);
-   
+  int8_t v = 31;
+  setVolume(v);
   if(p.getDebug() or p.getDebugSignal()){   //turns on built in neopixel for visual debugging
     indicator.begin();
     LED_set = 1;
@@ -49,7 +52,6 @@ void setup() {
     if(!rtc.begin()){
       Serial.println("RTC missing");  //initializes rtc 
       while(1){
-        Serial.println("In this loop");
         delay(500);
       }
     }
@@ -66,7 +68,23 @@ void setup() {
         indicator.setPixelColor(0,0,0,128);
         indicator.show();
       }
-    } 
+    }
+    DateTime now = rtc.now(); //set time for RTC
+    data = SD.open("pPiper.txt",FILE_WRITE);
+    data.print("-----Pied Piper Field Test ");
+        data.print(now.month(), DEC);
+        data.print('/');
+        data.print(now.day(), DEC);
+        data.print('/');
+        data.print(now.year(), DEC);
+        data.print(" ");
+        data.print(now.hour(), DEC);
+        data.print(':');
+        data.print(now.minute(), DEC);
+        data.print(':');
+        data.print(now.second(), DEC); 
+        data.println("-----");
+        data.close();
   #endif
 
   
@@ -77,6 +95,20 @@ void setup() {
     p.playback(10,clock_pin,latch_pin,signal_pin); //turn off all output from Audio Board
    
     
+}
+
+bool setVolume(int8_t vol){
+  Wire.beginTransmission(MAX_ADD);
+ if(vol > 63)
+  vol = 63;
+ else if(vol < 0);
+  vol = 0;
+  
+  Wire.write(vol);
+  if(Wire.endTransmission() == 0)
+    return true;
+  else
+    return false;
 }
 
 int count = 0; //counting value for insects detected
@@ -104,12 +136,16 @@ void playbackTime(int duration, int dly, int dly_btw, int sound_num){
    indicator.setPixelColor(0,32,0,128);
    indicator.show(); //turn indicator light dark purple
   while(t2-t1<=duration*1000){
+    digitalWrite(SHTDWN,HIGH);
     p.playback(sound_num,clock_pin,latch_pin,signal_pin);
     delay(dly);
     t2 = millis();
     p.playback(10,clock_pin,latch_pin,signal_pin);
+    digitalWrite(SHTDWN,LOW);
     delay(dly_btw);
   }
+   p.playback(10,clock_pin,latch_pin,signal_pin);
+   digitalWrite(SHTDWN,LOW);
 }
 
 int mode(){
@@ -121,10 +157,14 @@ int mode(){
     mode = 0;
   else if(i2 && !i3)
     mode = 1;
-  else if(!i2 && i3)
+  else if(i1 && !i2 && i3)
     mode = 2;
   else if(!i2 && !i3)
     mode = 3;
+  else if(!i1 && !i2 && i3)
+    mode = 6;
+  else if(!i1 && !i2 && !i3)
+    mode = 7;
   else
     mode = 0;
   return mode;
@@ -155,6 +195,21 @@ void printInsectDetected(){
 }
 
 
+void PiedPiper_Test(){
+  PiedPiper_NoPlayback();
+  indicator.setPixelColor(0,255,0,170);
+  indicator.show();
+  DateTime now = rtc.now();
+  Serial.print("Min: ");
+  Serial.println(now.minute());
+  if(now.minute()%5 == 0){
+    p.playback(1,clock_pin,latch_pin,signal_pin);
+    Serial.println("Playing");
+  }
+  if(now.minute()%5 == 2)
+    p.playback(10,clock_pin,latch_pin,signal_pin);
+}
+
 void PiedPiper_NoPlayback(){
   if(p.getDetected()==1){ //insect has been detected
     count++;
@@ -164,6 +219,7 @@ void PiedPiper_NoPlayback(){
     if(p.getDebug() or p.getDebugSignal()){
       indicator.setPixelColor(0,0,128,0);
       indicator.show(); //turn indicator light green
+      delay(500);
     }
     
     #if sd  //if using an SD card write info to it
@@ -198,7 +254,7 @@ void PiedPiperFull(){
       printInsectDetected();
     #endif
     digitalWrite(SHTDWN,LOW);
-    playbackTime(600,2000,7000,1);  //play signal for 10 minutes
+    playbackTime(600,6000,7000,2);  //play signal for 10 minutes
     p.playback(10,clock_pin,latch_pin,signal_pin); //stop playing signal
     digitalWrite(SHTDWN,HIGH);
    }
@@ -222,6 +278,7 @@ void loop(){
       case 0: PiedPiperFull(); break; //insect detection and active playback
       case 1: PiedPiper_NoPlayback(); break;  //insect detection only
       case 2: calibrateGain(); break; //calibrate the gain setting 
-      case 3: playbackTime(6,5000,1000,7); break;  //only playback
+      case 3: playbackTime(13,6000,7000,2); break; //only playback
+      case 6: PiedPiper_Test(); break; //simulate insect  
   }
 }

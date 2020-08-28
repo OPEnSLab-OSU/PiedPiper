@@ -42,6 +42,7 @@ bool piedPiper::getDetected(){
   return detected;
 }
 
+
 /*****************************************************************************
  * smoothData
  * performs a low pass filter on incoming signal to highlight magnitude peaks

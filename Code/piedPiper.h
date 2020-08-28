@@ -49,6 +49,7 @@ private:
 		double domFreq;   //dominant frequency of the incoming signal
     bool debug;
     bool debug_signal;
+
     
 public:  
 		piedPiper();
@@ -69,6 +70,6 @@ public:
     bool getDebug();
     bool getDebugSignal();
     void setDebugSetting(bool d);
-    
+
 
 };

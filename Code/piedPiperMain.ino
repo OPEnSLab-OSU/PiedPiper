@@ -1,3 +1,6 @@
+#include <uTimerLib.h>
+
+
 #include <Wire.h>
 #include <SD.h>
 #include <SPI.h>
@@ -5,29 +8,26 @@
 #include "piedPiper.h"
 #include <Adafruit_NeoPixel.h>
 
-#define sd 1
-#define card_select 10
+#define sd 1  //define if using SD and RTC
+#define card_select 10  //chip select for SD
 #define ampAddress 0x4B
-#define clock_pin 11
-#define latch_pin 10
+#define clock_pin 11  
+#define latch_pin 10  //pins for shift register
 #define signal_pin 12
 #define SHTDWN 5  //active LOW shutdown pin for MAX9744 Amplifier
-#define in1 6
-#define in2 9
+#define in1 6 
+#define in2 9 //input pins for changing runtime mode
 #define in3 13
-#define FULL 0
-#define TEST 1
-#define PLAYBACK 1
+#define PLAYBACK 1  
 #define PLAYBACK_TIME 10    //set how long the system will playback mimc signal(seconds)
-#define MAX_ADD 0x4B
+#define MAX_ADD 0x4B  //i2c address of amplifier
+
 piedPiper p;
 RTC_PCF8523 rtc;
 
 File data;
 Adafruit_NeoPixel indicator(1,8,NEO_GRB + NEO_KHZ800);
 bool LED_set = 0;
-
-
 
 void setup() {
   Wire.begin();
@@ -65,12 +65,12 @@ void setup() {
       Serial.println("Missing SD card");
       delay(100);
       if(p.getDebug() or p.getDebugSignal()){
-        indicator.setPixelColor(0,0,0,128);
+        indicator.setPixelColor(0,0,0,128); //set light blue to indicate missing sd card
         indicator.show();
       }
     }
     DateTime now = rtc.now(); //set time for RTC
-    data = SD.open("pPiper.txt",FILE_WRITE);
+    data = SD.open("pPiper.txt",FILE_WRITE);  //print start of test to separate different runs
     data.print("-----Pied Piper Field Test ");
         data.print(now.month(), DEC);
         data.print('/');
@@ -92,11 +92,15 @@ void setup() {
     pinMode(clock_pin,OUTPUT);    //initialize pins for shift register
     pinMode(signal_pin,OUTPUT);   //pin that will send serial data
    
-    p.playback(10,clock_pin,latch_pin,signal_pin); //turn off all output from Audio Board
-   
-    
+    p.playback(10,clock_pin,latch_pin,signal_pin); //turn off all output from Audio Board   
 }
 
+
+/***********************************************
+ * Set Volume
+ * sets volume of MAX9744 amplifier
+ * Not currently supported, I2C issues
+ ***********************************************/
 bool setVolume(int8_t vol){
   Wire.beginTransmission(MAX_ADD);
  if(vol > 63)
@@ -114,6 +118,7 @@ bool setVolume(int8_t vol){
 int count = 0; //counting value for insects detected
 
 void calibrateGain(){
+  digitalWrite(SHTDWN,HIGH);
     if(!LED_set){
       indicator.begin();
       LED_set = 1;
@@ -129,7 +134,12 @@ void calibrateGain(){
     delay(10);
 }
 
-//duration of playback in seconds, delay "dly" = time of playback in millis, delay "dly_btw" = time inbetween playbacks in milliseconds, sound_num picks playback track
+/***************************************************
+ * playback time
+ * play a specific .wav file for a specified length with defined pauses between signal
+ * duration of playback in seconds, delay "dly" = time of playback in millis, 
+ * delay "dly_btw" = time inbetween playbacks in milliseconds, sound_num picks playback track
+ ***************************************************/
 void playbackTime(int duration, int dly, int dly_btw, int sound_num){
   int t1 = millis();
   int t2 = t1;
@@ -147,7 +157,10 @@ void playbackTime(int duration, int dly, int dly_btw, int sound_num){
    p.playback(10,clock_pin,latch_pin,signal_pin);
    digitalWrite(SHTDWN,LOW);
 }
-
+/***************************************************
+ * Mode
+ * Sets the runtime mode of the Pied Piper
+ ***************************************************/
 int mode(){
   bool i1 = digitalRead(in1);
   bool i2 = digitalRead(in2);
@@ -170,6 +183,10 @@ int mode(){
   return mode;
 }
 
+/***************************************************
+ * Print Insect Detected
+ * print when an insect has been detected to the sd card
+ ***************************************************/
 void printInsectDetected(){
   DateTime now = rtc.now(); //set time for RTC
   data = SD.open("pPiper.txt",FILE_WRITE);
@@ -194,7 +211,11 @@ void printInsectDetected(){
       }
 }
 
-
+/***************************************************
+ * Pied Piper Test
+ * Playback male signal at 5 min intervals for testing detection accuracy
+ * Test Insect detection accuracy, plays male signal
+ ***************************************************/
 void PiedPiper_Test(){
   PiedPiper_NoPlayback();
   indicator.setPixelColor(0,255,0,170);
@@ -210,11 +231,16 @@ void PiedPiper_Test(){
     p.playback(10,clock_pin,latch_pin,signal_pin);
 }
 
+/***************************************************
+ * Pied Piper No Playback
+ * Run Pied Piper insect detection without playback
+ * Insect detection
+ ***************************************************/
+
 void PiedPiper_NoPlayback(){
   if(p.getDetected()==1){ //insect has been detected
     count++;
     Serial.println("Playing Mimic Signal");
-    
     
     if(p.getDebug() or p.getDebugSignal()){
       indicator.setPixelColor(0,0,128,0);
@@ -239,12 +265,15 @@ void PiedPiper_NoPlayback(){
    }
 }
 
+/***************************************************
+ * Pied Piper Full
+ * A full run of all Pied Piper capabilities
+ * Insect detection, mimic playback
+ ***************************************************/
 void PiedPiperFull(){
   if(p.getDetected()==1){ //insect has been detected
     count++;
     Serial.println("Playing Mimic Signal");
-    
-    
     if(p.getDebug() or p.getDebugSignal()){
       indicator.setPixelColor(0,0,128,0);
       indicator.show(); //turn indicator light green
@@ -253,10 +282,10 @@ void PiedPiperFull(){
     #if sd  //if using an SD card write info to it
       printInsectDetected();
     #endif
-    digitalWrite(SHTDWN,LOW);
+   
     playbackTime(600,6000,7000,2);  //play signal for 10 minutes
     p.playback(10,clock_pin,latch_pin,signal_pin); //stop playing signal
-    digitalWrite(SHTDWN,HIGH);
+    
    }
   
     if(p.getDebug() or p.getDebugSignal()){
@@ -271,7 +300,7 @@ void PiedPiperFull(){
 }
 
 void loop(){
-  digitalWrite(SHTDWN,HIGH);
+  digitalWrite(SHTDWN,LOW);
   bool d = digitalRead(in1); 
   p.setDebugSetting(d);
   switch(mode()){

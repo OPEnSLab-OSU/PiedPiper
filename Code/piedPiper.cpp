@@ -5,6 +5,9 @@ piedPiper::piedPiper(){
 	sampling_period_us = round(1000000*(1.0/samplingFrequency));
   debug = 1;
   debug_signal = 0;
+  rec_count = 0;
+  for(int i=0; i<RECORD_SIZE; i++)
+     recording[i] = 0;
  }
 
 void piedPiper::sampleFreq(){
@@ -55,6 +58,11 @@ int piedPiper::smoothData(){
       sampleBuffer[i] = analogRead(CHANNEL); //inputs new value to buffer
     else   
       sampleBuffer[i]=sampleBuffer[i-1];  //sets buffer value to next index
+    
+    if(rec_count >= RECORD_SIZE)
+      rec_count = 0;
+    recording[rec_count] = analogRead(CHANNEL);
+    rec_count++;
   }
   if(sampleBuffer[0]>average){  //check if new value exceeds the average value
     for(int i=0; i<bufferSize; i++)
@@ -65,6 +73,7 @@ int piedPiper::smoothData(){
   }
   average = round(ave/bufferSize);
   delay(1);
+  
   return average;
 }
 
@@ -141,7 +150,6 @@ void piedPiper::checkFrequency(){
   int above = 0;
   int below = 0;
   Serial.println("Check Frequency is Being Run");
-  //sampleFreq(); //samples signal to calculate frequency
   int init_freq = domFreq; //sets start of signal frequency
   int average = 0;
   int t1, t2;
@@ -272,5 +280,13 @@ void piedPiper::setDebugSetting(bool d){
     debug_signal = 1;
   } 
   //Serial.print("Debug: "); Serial.print(debug); Serial.print(" Debug Signal: "); Serial.println(debug_signal);
+}
+
+int* piedPiper::getRecord(){
+  return recording;
+}
+
+int piedPiper::getRecordCount(){
+  return rec_count;
 }
 

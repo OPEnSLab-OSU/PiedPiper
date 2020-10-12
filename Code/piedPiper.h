@@ -27,6 +27,7 @@
 #define fShift 1.0         //set how much the frequency has to change for it to count as a frequency rise
 #define DEBUG_SIGNAL 0
 #define DEBUG 1
+#define RECORD_SIZE 15000
 /*****************************************************/
  
 
@@ -44,6 +45,10 @@ private:
     int sampleBuffer[bufferSize];
     int signalBuffer[500];  
     int average = 0;
+    
+    int recording[RECORD_SIZE];
+    int rec_count;
+    
 		double vReal[samples];
 		double vImag[samples];
 		double domFreq;   //dominant frequency of the incoming signal
@@ -70,6 +75,9 @@ public:
     bool getDebug();
     bool getDebugSignal();
     void setDebugSetting(bool d);
+    int* getRecord();
+    int getRecordCount();
+    
 
 
 };

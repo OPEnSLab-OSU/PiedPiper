@@ -1,6 +1,3 @@
-#include <uTimerLib.h>
-
-
 #include <Wire.h>
 #include <SD.h>
 #include <SPI.h>
@@ -8,7 +5,7 @@
 #include "piedPiper.h"
 #include <Adafruit_NeoPixel.h>
 
-#define sd 1  //define if using SD and RTC
+#define sd 0  //define if using SD and RTC
 #define card_select 10  //chip select for SD
 #define ampAddress 0x4B
 #define clock_pin 11  
@@ -95,6 +92,44 @@ void setup() {
     p.playback(10,clock_pin,latch_pin,signal_pin); //turn off all output from Audio Board   
 }
 
+void saveRecording(){
+  DateTime now = rtc.now();
+  String record_name = "-----Recording[";
+  record_name+=now.month();
+  record_name+="-";
+  record_name+=now.day();
+  record_name+="-";
+  record_name+=now.year();
+  record_name+="_";
+  record_name+=now.hour();
+  record_name+="-";
+  record_name+=now.minute();
+  record_name+="-";
+  record_name+=now.second(); 
+  Serial.println(record_name);
+  data = SD.open("RECORD.txt",FILE_WRITE);
+  if(data){
+    int start = p.getRecordCount();
+    int* rec = p.getRecord();
+    data.println();
+    data.print(record_name);
+    data.println("]-----\n");
+    for(int i = start; i < RECORD_SIZE; i++){
+      data.print(rec[i]);
+      data.print(",");
+    }
+    for(int i=0; i<start; i++){
+      data.print(rec[i]);
+      data.print(",");
+    }
+    data.println();
+    data.close();
+    Serial.println("Recording Saved to SD!");
+  }
+  else
+    Serial.println("Could not create file");
+}
+
 
 /***********************************************
  * Set Volume
@@ -131,7 +166,7 @@ void calibrateGain(){
     else
       indicator.setPixelColor(0,0,128,128);
     indicator.show();
-    delay(10);
+    delayMicroseconds(100);
 }
 
 /***************************************************
@@ -208,6 +243,7 @@ void printInsectDetected(){
         data.print(count);
         data.println();
         data.close();
+        Serial.println("Saved detection to SD");
       }
 }
 
@@ -224,11 +260,14 @@ void PiedPiper_Test(){
   Serial.print("Min: ");
   Serial.println(now.minute());
   if(now.minute()%5 == 0){
+    digitalWrite(SHTDWN,HIGH);
     p.playback(1,clock_pin,latch_pin,signal_pin);
     Serial.println("Playing");
   }
-  if(now.minute()%5 == 2)
+  if(now.minute()%5 == 2){
     p.playback(10,clock_pin,latch_pin,signal_pin);
+    digitalWrite(SHTDWN,LOW);
+  }
 }
 
 /***************************************************
@@ -250,6 +289,7 @@ void PiedPiper_NoPlayback(){
     
     #if sd  //if using an SD card write info to it
       printInsectDetected();
+      saveRecording();
     #endif
    }
   
@@ -281,6 +321,7 @@ void PiedPiperFull(){
     
     #if sd  //if using an SD card write info to it
       printInsectDetected();
+      saveRecording();
     #endif
    
     playbackTime(600,6000,7000,2);  //play signal for 10 minutes
@@ -299,8 +340,12 @@ void PiedPiperFull(){
    
 }
 
-void loop(){
-  digitalWrite(SHTDWN,LOW);
+void loop(){  
+  /* 
+  if(mode()!=6 && mode()!=2){
+    digitalWrite(SHTDWN,LOW);
+    p.playback(10,clock_pin,latch_pin,signal_pin); //stop playing signal
+  }
   bool d = digitalRead(in1); 
   p.setDebugSetting(d);
   switch(mode()){
@@ -309,5 +354,17 @@ void loop(){
       case 2: calibrateGain(); break; //calibrate the gain setting 
       case 3: playbackTime(13,6000,7000,2); break; //only playback
       case 6: PiedPiper_Test(); break; //simulate insect  
-  }
+  }*/
+  bool d = digitalRead(in1); 
+  p.setDebugSetting(d);
+  digitalWrite(SHTDWN,HIGH);
+  p.getPeakVoltage();
+//  Serial.print("Current Peak: ");
+//  Serial.print(p.getPeak());
+//  Serial.print("Peak: ");
+//  Serial.print(700);
+//  Serial.print(", Raw: ");
+//  Serial.print(analogRead(CHANNEL));
+//  Serial.print(", Smoothed: ");
+  //Serial.println(p.smoothData());
 }

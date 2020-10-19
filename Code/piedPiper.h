@@ -23,10 +23,13 @@
 #define upperPeak 4 //set peak bounds for insect
 #define lowerPeak 2
 #define peakThreshold 0.99 //set how sensitive the peak detection is
-#define lowerThreshold 0.95
+#define lowerThreshold 0.96
 #define fShift 1.0         //set how much the frequency has to change for it to count as a frequency rise
 #define DEBUG_SIGNAL 0
 #define DEBUG 1
+#define SIGNAL_BUFFER_SIZE 500
+#define RECORD_SIZE 15000
+#define PEAK_BUFF_SIZE 5
 /*****************************************************/
  
 
@@ -42,14 +45,20 @@ private:
     float peak; //peak value of waveform for peak counting
     int num_peaks;  //number of peaks per second
     int sampleBuffer[bufferSize];
-    int signalBuffer[500];  
+    int signalBuffer[SIGNAL_BUFFER_SIZE];  
     int average = 0;
+    
+    int recording[RECORD_SIZE];
+    int rec_count;
+    
 		double vReal[samples];
 		double vImag[samples];
 		double domFreq;   //dominant frequency of the incoming signal
     bool debug;
     bool debug_signal;
-
+    int peakBuf[PEAK_BUFF_SIZE];
+    int delta_t[PEAK_BUFF_SIZE];
+    int peak_index;
     
 public:  
 		piedPiper();
@@ -69,7 +78,11 @@ public:
     int smoothData();
     bool getDebug();
     bool getDebugSignal();
+    int getPeak();
     void setDebugSetting(bool d);
+    int* getRecord();
+    int getRecordCount();
+    
 
 
 };

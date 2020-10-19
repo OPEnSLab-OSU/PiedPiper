@@ -5,6 +5,14 @@ piedPiper::piedPiper(){
 	sampling_period_us = round(1000000*(1.0/samplingFrequency));
   debug = 1;
   debug_signal = 0;
+  rec_count = 0;
+  peak_index = 0;
+  for(int i=0; i<RECORD_SIZE; i++)
+     recording[i] = 0;
+  for(int i=0; i<PEAK_BUFF_SIZE; i++){
+     peakBuf[i]=0;
+     delta_t[i]=0;
+  }
  }
 
 void piedPiper::sampleFreq(){
@@ -55,6 +63,11 @@ int piedPiper::smoothData(){
       sampleBuffer[i] = analogRead(CHANNEL); //inputs new value to buffer
     else   
       sampleBuffer[i]=sampleBuffer[i-1];  //sets buffer value to next index
+    
+    if(rec_count >= RECORD_SIZE)
+      rec_count = 0;
+    recording[rec_count] = analogRead(CHANNEL);
+    rec_count++;
   }
   if(sampleBuffer[0]>average){  //check if new value exceeds the average value
     for(int i=0; i<bufferSize; i++)
@@ -64,7 +77,8 @@ int piedPiper::smoothData(){
     ave+=sampleBuffer[i]; 
   }
   average = round(ave/bufferSize);
-  delay(1);
+  //delay(1);
+  
   return average;
 }
 
@@ -76,16 +90,19 @@ int piedPiper::smoothData(){
 //sets values in the signal buffer and determines peak value
 void piedPiper::getPeakVoltage(){
   peak = 0;
+  int ave=0;
   //collect one second of the incoming signal
-  for(int i=0; i<500; i++){
+  for(int i=0; i<SIGNAL_BUFFER_SIZE; i++){
     signalBuffer[i] = smoothData(); //set the values in the signal buffer to the smoothed analog readings
-    if(signalBuffer[i]>peak)
-      peak = signalBuffer[i]; //if the current reading is greater than peak, set peak to current reading
+    ave+=signalBuffer[i];
+//    if(signalBuffer[i]>peak)
+//      peak = signalBuffer[i]; //if the current reading is greater than peak, set peak to current reading
   }
+  peak = ave/SIGNAL_BUFFER_SIZE;
   //Serial.println("Data Set");
   if(debug_signal){
-    for(int i=0; i<500;i++){ //For visualizing the peak detection parameters
-      Serial.print(peak*peakThreshold); //prints upper value signal must pass to be declared a peak
+    for(int i=0; i<SIGNAL_BUFFER_SIZE;i++){ //For visualizing the peak detection parameters
+      Serial.print(peak); //prints upper value signal must pass to be declared a peak
       Serial.print(',');
       Serial.print(peak*lowerThreshold); //prints the value signal must pass below to count the peak
       Serial.print(',');
@@ -105,7 +122,29 @@ void piedPiper::countPeaks(){
   for(int i=0; i<500; i++){   
    if(signalBuffer[i] > peak*peakThreshold && !count_flag) //Checks if signal has passed abouve peak threshold
        {
-             peak_count++;
+          Serial.print("Millis: ");
+          Serial.println(millis());
+          peakBuf[peak_index] = millis();
+          if(peak_index==0){
+             delta_t[peak_index] = peakBuf[peak_index]-peakBuf[PEAK_BUFF_SIZE-1];
+          }
+          else{
+            delta_t[peak_index] = peakBuf[peak_index]-peakBuf[peak_index-1];
+          }
+            peak_index++;
+            peak_index=peak_index%5;
+            Serial.print("Millis Times: ");
+            for(int j=0; j<PEAK_BUFF_SIZE; j++){
+            Serial.print(peakBuf[j]);
+            Serial.print(" ");
+            }
+            Serial.print("\nDelta T: ");
+            for(int j=0; j<PEAK_BUFF_SIZE; j++){
+              Serial.print(delta_t[j]);
+              Serial.print(" ");
+            }
+            Serial.println();
+            peak_count++;
              count_flag = true; //sets flag true as to not count repeated peaks from noise
        }
      
@@ -141,7 +180,6 @@ void piedPiper::checkFrequency(){
   int above = 0;
   int below = 0;
   Serial.println("Check Frequency is Being Run");
-  //sampleFreq(); //samples signal to calculate frequency
   int init_freq = domFreq; //sets start of signal frequency
   int average = 0;
   int t1, t2;
@@ -272,5 +310,17 @@ void piedPiper::setDebugSetting(bool d){
     debug_signal = 1;
   } 
   //Serial.print("Debug: "); Serial.print(debug); Serial.print(" Debug Signal: "); Serial.println(debug_signal);
+}
+
+int* piedPiper::getRecord(){
+  return recording;
+}
+
+int piedPiper::getRecordCount(){
+  return rec_count;
+}
+
+int piedPiper::getPeak(){
+  return peak;
 }
 

@@ -15,6 +15,7 @@
 
 
 #define CHANNEL A2 //sets analog input
+#define samplePow 9
 #define samples 512 //set # of samples; must be a power of two
 #define bufferSize 30
 #define AMBIENCE 550 //set level of ambient noise
@@ -55,6 +56,11 @@ private:
     bool debug;
     bool debug_signal;
 
+    unsigned char sendDataType = 1;
+    bool normalize = true;
+    float dataMax = 0;
+    float dataMin = 0;
+
     
 public:  
 		piedPiper();
@@ -77,7 +83,7 @@ public:
     void setDebugSetting(bool d);
     int* getRecord();
     int getRecordCount();
-    
-
-
+    void sampleRaw();
+    void normalizeData(int max);
+    void sendData();
 };

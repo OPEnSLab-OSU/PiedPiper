@@ -22,11 +22,71 @@ void piedPiper::sampleFreq(){
       microseconds += sampling_period_us;
   }
   /* Print the results of the sampling according to time */
+  FFT.DCRemoval(vReal, samples);
   FFT.Windowing(vReal, samples, FFT_WIN_TYP_HAMMING, FFT_FORWARD);	/* Weigh data */
   FFT.Compute(vReal, vImag, samples, FFT_FORWARD); /* Compute FFT */
   FFT.ComplexToMagnitude(vReal, vImag, samples); /* Compute magnitudes */
  
   domFreq = FFT.MajorPeak(vReal, samples, samplingFrequency);
+}
+
+void piedPiper::sampleRaw(){
+	microseconds = micros();
+  for(int i=0; i<samples; i++)
+  {
+      vReal[i] = analogRead(CHANNEL);
+      vImag[i] = 0;
+      while(micros() - microseconds < sampling_period_us){
+        //empty loop
+      }
+      microseconds += sampling_period_us;
+  }
+}
+
+void piedPiper::normalizeData(int max){
+  float dataMax = vReal[0];
+  float dataMin = vReal[0];
+
+  for (int i = 0; i < samples; i++){
+    if (vReal[i] > dataMax){
+      dataMax = vReal[i];
+    }
+
+    if (vReal[i] < dataMin){
+      dataMin = vReal[i];
+    }
+  }
+
+  for (int i = 0; i < samples; i++){
+    vReal[i] -= dataMin;
+  }
+
+  dataMax -= dataMin;
+
+  for (int i = 0; i < samples; i++){
+    vReal[i] *= max / dataMax;
+  }
+}
+
+void piedPiper::sendData(){
+  Serial.write(255);
+  
+  // Send raw audio data
+  if (sendDataType == 0){
+    Serial.write(128 * sendDataType + samplePow);
+    
+    for (int i = 0; i < samples; i++){
+      Serial.write(min(max(int(vReal[i]), 0), 254));
+    }
+  }
+  // Send spectrogram data
+  else if (sendDataType == 1){
+    Serial.write(128 * sendDataType + samplePow - 1);
+
+    for (int i = samples/2; i < samples; i++){
+      Serial.write(min(max(int(vReal[i]), 0), 254));
+    }
+  }
 }
 
 void piedPiper::printFreq(){/*
@@ -88,7 +148,6 @@ void piedPiper::getPeakVoltage(){
   //collect one second of the incoming signal
   for(int i=0; i<500; i++){
     signalBuffer[i] = smoothData(); //set the values in the signal buffer to the smoothed analog readings
-    if(signalBuffer[i]>peak)
       peak = signalBuffer[i]; //if the current reading is greater than peak, set peak to current reading
   }
   //Serial.println("Data Set");

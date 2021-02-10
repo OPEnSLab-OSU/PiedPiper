@@ -207,6 +207,8 @@ int mode(){
     mode = 1;
   else if(i1 && !i2 && i3)
     mode = 2;
+  else if(i1 && !i2 && !i3)
+    mode = 4;
   else if(!i2 && !i3)
     mode = 3;
   else if(!i1 && !i2 && i3)
@@ -269,6 +271,19 @@ void PiedPiper_Test(){
     digitalWrite(SHTDWN,LOW);
   }
 }
+
+/***************************************************
+ * Pied Piper Live Spectrogram
+ * Run Pied Piper spectrogram tool
+ ***************************************************/
+
+ void LiveSpectrogram(){
+  indicator.setPixelColor(0,128,128,128);
+  indicator.show(); //turn indicator light white
+  p.sampleFreq();
+  p.normalizeData(254);
+  p.sendData();
+ }
 
 /***************************************************
  * Pied Piper No Playback
@@ -352,6 +367,7 @@ void loop(){
       case 1: PiedPiper_NoPlayback(); break;  //insect detection only
       case 2: calibrateGain(); break; //calibrate the gain setting 
       case 3: playbackTime(13,6000,7000,2); break; //only playback
+      case 4: LiveSpectrogram(); break; // Enables live spectrogram debug tool
       case 6: PiedPiper_Test(); break; //simulate insect  
   }
 }

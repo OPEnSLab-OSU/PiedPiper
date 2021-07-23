@@ -80,7 +80,7 @@ def main():
     win.blit(winTemplate, (0,0))
     
     graphSurface = pygame.Surface((processedDataBufferSize, math.pow(2, graphHeightPow))).convert()
-    graphRedChannel = pygame.surfarray.pixels_red(graphSurface)
+    dataBuffer = np.zeros(512, int)
     
     pygame.display.set_caption("PiedPiper Live Graphing Utility")
     
@@ -116,13 +116,11 @@ def main():
             elif event.type == QUIT:
                 pgrmExit = True
                 break
-        
-        #print("Seeking next packet")
+
         # Move to the next packet
         while int(ser.read()[0]) != 255:
             continue
         
-        #print("Got packet5")
         metaDataByte = int(ser.read()[0])
         
         packetSize = metaDataByte % 128
@@ -130,31 +128,22 @@ def main():
         if packetSize > maxPacketSize:
             print("WARNING: Packet size (2^" + str(packetSize) + " bytes) exceeds maximum allowed (2^" + str(maxPacketSize) + " bytes)")
         else:
-            inData = ser.read(round(math.pow(2, packetSize)))
-            
-#             newInData = [0 for i in range(512)]
-#             
-#             for i in range(len(inData)):
-#                 newInData[i] = int(inData[i])
-#             
-#             for i in range(len(inData)):
-#                 newInData[i] /= max(max(newInData), 1)
-#             
-#             for i in range(len(inData)):
-#                 newInData[i] = int(newInData[i] * 254)
-#             
-            graphRedChannel = np.roll(graphRedChannel, -1, 0)
-            verticalScale = round(math.pow(2, graphHeightPow - packetSize))
-            
-            for i in range(len(inData)):
-                graphRedChannel[processedDataBufferSize - 1, (i * verticalScale):((i + 1) * verticalScale)] = int(inData[i])
+            packetByteSize = 1 << packetSize
 
-                #for v in range(verticalScale):
-                #    graphRedChannel[processedDataBufferSize - 1, i * verticalScale + v] = int(inData[i])
+            inData = ser.read(packetByteSize)
+            
+            #dataBuffer = np.roll(dataBuffer, len(inData), 0)
+            
+            for i in range(packetByteSize):
+                dataBuffer[i] = 512 - int(inData[i]) * 2
         
         if time.time() - lastBlitTime > 1/60:
             lastBlitTime = time.time()
-            pygame.surfarray.pixels_red(graphSurface)[:,:] = graphRedChannel[:,:]
+            graphSurface.fill((255,255,255))
+            
+            for i in range(processedDataBufferSize - 2):
+                pygame.draw.line(graphSurface, (255,0,0), (i, dataBuffer[i]), (i+1, dataBuffer[i+1]), 1)
+                
             win.blit(graphSurface, (32, 32))
             pygame.display.flip()
             

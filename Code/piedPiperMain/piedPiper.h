@@ -55,12 +55,9 @@ private:
 		double domFreq;   //dominant frequency of the incoming signal
     bool debug;
     bool debug_signal;
-
-    unsigned char sendDataType = 1;
-    bool normalize = true;
+    
     float dataMax = 0;
     float dataMin = 0;
-
     
 public:  
 		piedPiper();
@@ -85,5 +82,6 @@ public:
     int getRecordCount();
     void sampleRaw();
     void normalizeData(int max);
-    void sendData();
+    void sendRawData();
+    void sendSpectrumData();
 };

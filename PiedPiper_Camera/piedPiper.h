@@ -40,11 +40,14 @@
 #define dataPin 12
 #define SHTDWN 5
 
-//Camera
-#define camPow 5
-#define camImg 11
-#define imgInt 30000
-#define imgTime 250000
+//Camera [Camera power and image control to be changed to pins #1 (Tx) and #4 (D4)]
+#define camPow 4 // Power control pin [CHANGE]
+#define camImg 1 // Imaging control pin [CHANGE]
+#define imgInt 15000 // Miliseconds between detection photos
+#define imgTime 600000 // Time after a detection to be taking photos
+#define ctrlImgInt 900000 // Miliseconds between control photos
+
+#define logInt 3600000 // Miliseconds between status logs
 
 class piedPiper {
   private:
@@ -77,10 +80,12 @@ class piedPiper {
 
     unsigned long lastDetectionTime;
     unsigned long lastPhotoTime;
+    unsigned long lastLogTime;
     int detectionNum;
     int photoNum;
     
     bool insectDetection();
     void playback();
     void takePhoto();
+    void reportAlive();
 };

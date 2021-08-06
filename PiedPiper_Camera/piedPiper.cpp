@@ -9,7 +9,7 @@ piedPiper::piedPiper() {
   pinMode(SHTDWN, OUTPUT);
 
   digitalWrite(camPow, LOW);
-  digitalWrite(camImg, HIGH);
+  digitalWrite(camImg, LOW);
 }
 
 bool piedPiper::insectDetection()
@@ -25,6 +25,7 @@ bool piedPiper::insectDetection()
     if (fullSignalTest())
     {
       saveDetection();
+      detectionNum++;
       return true;
     }
     else
@@ -243,12 +244,21 @@ void piedPiper::saveDetection()
   data.close();
 }
 
-void piedPiper::takePhoto()
+void piedPiper::takePhoto(int n)
 {
   lastPhotoTime = millis();
 
-  //Take photo
-
+  digitalWrite(camImg, HIGH);
+  digitalWrite(camPow, HIGH); // Turn on the camera
+  delay(2000);                    // Wait for the camera to initialize
+  digitalWrite(camImg, LOW);  // Write low to tell the camera to take a photo
+  delay(50);                      // Wait 50ms to ensure that the camera responds
+  digitalWrite(camImg, HIGH); // Write high to the camera to ensure that only a single image is taken
+  delay(2000);                    // Wait for the camera to finish writing the image to storage
+  digitalWrite(camPow, LOW);  // Power off the camera
+  delay(50);                      // Wait for the camera to power off
+  digitalWrite(camImg, LOW);
+  
   photoNum++;
 
   data = SD.open("Photos.txt", FILE_WRITE);
@@ -262,10 +272,10 @@ void piedPiper::takePhoto()
   data.println(photoNum, DEC);
 
   data.println("DETECTION#");
-  data.println(detectionNum);
+  data.println(n, DEC);
 
   data.println("TIME");
-  data.println(lastPhotoTime);
+  data.println(lastPhotoTime, DEC);
 
   data.close();
 }
@@ -287,4 +297,19 @@ void piedPiper::playback()
   digitalWrite(clk, LOW); //sets clock low indicating the start of a byte
   shiftOut(dataPin, clk, MSBFIRST, 0b11111111); //sends data to shift register
   digitalWrite(latch, HIGH); //turns on output
+}
+
+void piedPiper::reportAlive()
+{
+  lastLogTime = millis();
+  
+  data = SD.open("Log.txt", FILE_WRITE);
+
+  while (!data)
+  {
+    data = SD.open("Log.txt", FILE_WRITE);
+  }
+  
+  data.println(millis(), DEC);
+  data.close();
 }

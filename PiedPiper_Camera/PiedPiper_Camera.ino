@@ -11,10 +11,18 @@
 piedPiper p;
 
 void setup() {
-  //analogReadResolution(12);
+  analogReadResolution(12);
   pinMode(audIn, INPUT);
   Serial.begin(2000000);
-  SD.begin(card_select);
+  
+  if (SD.begin(card_select))
+  {
+    Serial.println("SD initialized.");
+  }
+  else
+  {
+    Serial.println("SD failed to initialize.");
+  }
 }
 
 void loop() {
@@ -25,9 +33,22 @@ void loop() {
   }
   else
   {
-    if ((millis() - p.lastPhotoTime > imgInt) && (millis() - p.lastDetectionTime < imgTime))
+    // Take photos after a detection
+    if ((millis() - p.lastPhotoTime > imgInt) && (millis() - p.lastDetectionTime < imgTime) && p.detectionNum != 0)
     {
-      p.takePhoto();
+      p.takePhoto(p.detectionNum);
+    }
+
+    // Take control photos
+    if (millis() - p.lastPhotoTime > ctrlImgInt)
+    {
+      p.takePhoto(0);
+    }
+    
+    // Report aliveness
+    if ((millis() - p.lastLogTime) > logInt)
+    {
+      p.reportAlive();
     }
   }
 }

@@ -24,8 +24,9 @@ bool piedPiper::insectDetection()
 
     if (fullSignalTest())
     {
-      saveDetection();
       detectionNum++;
+      saveDetection();
+      lastDetectionTime = millis();
       return true;
     }
     else

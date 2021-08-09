@@ -9,6 +9,7 @@
 // Green: Positive detection
 
 piedPiper p;
+int t = 0;
 
 void setup() {
   analogReadResolution(12);
@@ -28,25 +29,33 @@ void setup() {
 void loop() {
   if (p.insectDetection())
   {
-    p.takePhoto();
+    p.takePhoto(p.detectionNum);
     p.playback();
   }
   else
   {
+    t = millis();
+
     // Take photos after a detection
-    if ((millis() - p.lastPhotoTime > imgInt) && (millis() - p.lastDetectionTime < imgTime) && p.detectionNum != 0)
+    if ((t - p.lastPhotoTime > imgInt) && (t - p.lastDetectionTime < imgTime) && p.detectionNum != 0)
     {
       p.takePhoto(p.detectionNum);
     }
 
+    //INtermittent playback
+    if ((t - p.lastPlaybackTime) > playbackInt)
+    {
+      p.playback();
+    }
+    
     // Take control photos
-    if (millis() - p.lastPhotoTime > ctrlImgInt)
+    if (t - p.lastPhotoTime > ctrlImgInt)
     {
       p.takePhoto(0);
     }
     
     // Report aliveness
-    if ((millis() - p.lastLogTime) > logInt)
+    if ((t - p.lastLogTime) > logInt)
     {
       p.reportAlive();
     }

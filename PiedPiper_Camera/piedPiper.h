@@ -48,6 +48,7 @@
 #define ctrlImgInt 900000 // Miliseconds between control photos
 
 #define logInt 3600000 // Miliseconds between status logs
+#define playbackInt 900000 // Milliseconds between playback
 
 class piedPiper {
   private:
@@ -55,7 +56,7 @@ class piedPiper {
     // This must be an integer multiple of the window size:
     static const short sampleCount = recordTime * sampleFreq;
     static const short winCount = sampleCount / winSize;
-    static const int delayTime = round(1000000 / sampleFreq - 23);
+    static const int delayTime = round(1000000 / sampleFreq - analogReadTime);
 
     short sampleBuffer[sampleCount];
     float vReal[winSize];
@@ -81,11 +82,13 @@ class piedPiper {
     unsigned long lastDetectionTime;
     unsigned long lastPhotoTime;
     unsigned long lastLogTime;
+    unsigned long lastPlaybackTime;
     int detectionNum;
     int photoNum;
     
+    
     bool insectDetection();
     void playback();
-    void takePhoto();
+    void takePhoto(int n);
     void reportAlive();
 };

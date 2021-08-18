@@ -15,19 +15,18 @@
 // The product of sampleFreq and recordTime must be an integer multiple of winSize.
 
 // Detection algorithm settings:
-#define targetFreq 172 // Primary (first harmonic) frequency of mating call to search for
-#define freqMargin 15 // Margin for error of target frequency
+#define targetFreq 175 // Primary (first harmonic) frequency of mating call to search for
+#define freqMargin 25 // Margin for error of target frequency
 #define harms 2 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
-#define significanceThresh 15 // Threshhold for magnitude of target frequency peak to be considered a positive detection
-#define signalLen 7 // Expected length of the mating call
-#define detectionEfficiency 0.5 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
+#define significanceThresh 20 // Threshhold for magnitude of target frequency peak to be considered a positive detection
+#define signalLen 6 // Expected length of the mating call
+#define detectionEfficiency 0.75 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
 
 // Signal processing settings:
 #define analogReadTime 23 // Number of microseconds required to execute analogRead()
 #define timeAvgWinSize 16 // Window size for finding average frequencies over time
-#define freqAvgWinSize 16 // Window size for finding average frequencies at an instant in time; used to reduce broadening & noise
 #define minFreq 100 // Cutoff frequency for high-pass filter, used to mitigate the effects of signal wander. Must be below target frequency.
-#define noiseFloorThresh 1.4 // uh
+#define noiseFloorThresh 1.1 // uh
 
 //Hardware settings & information:
 #define audIn A3
@@ -41,8 +40,8 @@
 #define SHTDWN 5
 
 //Camera [Camera power and image control to be changed to pins #1 (Tx) and #4 (D4)]
-#define camPow 4 // Power control pin [CHANGE]
-#define camImg 1 // Imaging control pin [CHANGE]
+#define camPow 4 // Power control pin [4]
+#define camImg 1 // Imaging control pin [1]
 #define imgInt 10000 // Miliseconds between detection photos [15000]
 #define imgTime 60000 // Time after a detection to be taking photos [600000]
 #define ctrlImgInt 90000 // Miliseconds between control photos [900000]
@@ -69,7 +68,7 @@ class piedPiper {
 
     void processSignal();
     void timeSmoothFreq();
-    void smoothFreq();
+    void smoothFreq(int freqAvgWinSize);
 
     void recordSamples(int samples);
     void saveBuffer();

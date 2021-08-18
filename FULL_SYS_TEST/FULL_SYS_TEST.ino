@@ -44,7 +44,7 @@ void setup() {
     Serial.println("SD failed to initialize.");
   }
 
-  SD.end();
+  //SD.end();
 }
 
 void loop() {

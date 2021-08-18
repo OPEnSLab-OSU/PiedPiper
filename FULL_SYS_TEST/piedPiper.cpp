@@ -53,7 +53,7 @@ bool piedPiper::initFreqTest()
     freqs[0][i] = vReal[i];
   }
 
-  smoothFreq();
+  smoothFreq(8);
 
   for (int i = 0; i < winSize / 2; i++)
   {
@@ -88,7 +88,16 @@ void piedPiper::processSignal()
       freqs[t][v] = vReal[v];
     }
 
-    smoothFreq();
+    smoothFreq(4);
+
+    for (int v = 0; v < winSize / 2; v++)
+    {
+      int temp = freqs[t][v];
+      freqs[t][v] = vReal[v];
+      vReal[v] = temp;
+    }
+
+    smoothFreq(16);
 
     for (int v = 0; v < winSize / 2; v++)
     {
@@ -118,7 +127,7 @@ bool piedPiper::fullSignalTest()
 }
 
 // Performs rectangular smoothing on frequency data stored in [vReal]
-void piedPiper::smoothFreq()
+void piedPiper::smoothFreq(int freqAvgWinSize)
 {
   double inptDup[winSize];
   int upperBound = 0;
@@ -218,11 +227,13 @@ void piedPiper::recordSamples(int samples)
 void piedPiper::saveDetection()
 {
   Serial.println("Saving detection data...");
-  data = SD.open("Detections.txt", FILE_WRITE);
+  SD.begin(card_select);
+  data = SD.open("DETS.txt", FILE_WRITE);
 
-  while (!data)
+  while (data == NULL)
   {
-    data = SD.open("Detections.txt", FILE_WRITE);
+    Serial.println("Failed to open detections.txt, trying again...");
+    data = SD.open("DETS.txt", FILE_WRITE);
   }
   
   data.println("NUMBER");
@@ -261,7 +272,7 @@ void piedPiper::takePhoto(int n)
 
   data = SD.open("Photos.txt", FILE_WRITE);
   
-  while (!data)
+  while (data == NULL)
   {
     data = SD.open("Photos.txt", FILE_WRITE);
   }
@@ -305,7 +316,7 @@ void piedPiper::reportAlive()
   
   data = SD.open("Log.txt", FILE_WRITE);
 
-  while (!data)
+  while (data == NULL)
   {
     data = SD.open("Log.txt", FILE_WRITE);
   }

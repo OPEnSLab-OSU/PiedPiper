@@ -13287,9 +13287,9 @@ R2 3 2 {val-val*var/100}
 <instance part="GND1" gate="1" x="93.98" y="25.4" smashed="yes" grouprefs="MICROPHONE_PREAMPLIFIER">
 <attribute name="VALUE" x="91.44" y="22.86" size="1.778" layer="96"/>
 </instance>
-<instance part="CAM_CONNECTOR" gate="A" x="144.78" y="66.04" smashed="yes" rot="R90" grouprefs="CAMERA_CONNECTOR">
-<attribute name="NAME" x="136.525" y="59.69" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="152.4" y="59.69" size="1.778" layer="96" rot="R90"/>
+<instance part="CAM_CONNECTOR" gate="A" x="142.24" y="63.5" smashed="yes" rot="R90" grouprefs="CAMERA_CONNECTOR">
+<attribute name="NAME" x="128.905" y="67.31" size="1.778" layer="95" rot="MR180"/>
+<attribute name="VALUE" x="149.86" y="57.15" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="FEATHER_LONG" gate="A" x="40.64" y="-33.02" smashed="yes" grouprefs="FEATHER">
 <attribute name="NAME" x="34.29" y="-12.065" size="1.778" layer="95" align="bottom-right"/>
@@ -13323,12 +13323,12 @@ R2 3 2 {val-val*var/100}
 <instance part="GND13" gate="1" x="-2.54" y="-33.02" smashed="yes" rot="R90" grouprefs="AUDIO_FX">
 <attribute name="VALUE" x="0" y="-35.56" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="GND14" gate="1" x="147.32" y="35.56" smashed="yes" grouprefs="CAMERA_CONNECTOR">
-<attribute name="VALUE" x="144.78" y="33.02" size="1.778" layer="96"/>
+<instance part="GND14" gate="1" x="149.86" y="40.64" smashed="yes" grouprefs="CAMERA_CONNECTOR">
+<attribute name="VALUE" x="147.32" y="38.1" size="1.778" layer="96"/>
 </instance>
-<instance part="R5" gate="G$1" x="144.78" y="43.18" smashed="yes" rot="R90" grouprefs="CAMERA_CONNECTOR">
-<attribute name="NAME" x="143.2814" y="39.37" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="148.082" y="39.37" size="1.778" layer="96" rot="R90"/>
+<instance part="R5" gate="G$1" x="142.24" y="48.26" smashed="yes" rot="R90" grouprefs="CAMERA_CONNECTOR">
+<attribute name="NAME" x="140.7414" y="44.45" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="145.542" y="44.45" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="C6" gate="G$1" x="-50.8" y="40.64" smashed="yes" rot="R180" grouprefs="MICROPHONE_PREAMPLIFIER">
 <attribute name="NAME" x="-51.816" y="40.005" size="1.778" layer="95" rot="R180"/>
@@ -13415,7 +13415,9 @@ R2 3 2 {val-val*var/100}
 </segment>
 <segment>
 <pinref part="CAM_CONNECTOR" gate="A" pin="4"/>
-<wire x1="147.32" y1="63.5" x2="147.32" y2="38.1" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="144.78" y1="60.96" x2="144.78" y2="55.88" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="144.78" y1="55.88" x2="149.86" y2="55.88" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="149.86" y1="55.88" x2="149.86" y2="43.18" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
 <pinref part="GND14" gate="1" pin="GND"/>
 </segment>
 <segment>
@@ -13427,7 +13429,7 @@ R2 3 2 {val-val*var/100}
 <net name="A2" class="0">
 <segment>
 <wire x1="48.26" y1="-30.48" x2="55.88" y2="-30.48" width="0.1524" layer="91" grouprefs="FEATHER"/>
-<label x="55.88" y="-30.48" size="1.778" layer="95" rot="MR180" xref="yes" grouprefs="FEATHER"/>
+<label x="55.88" y="-30.48" size="1.4224" layer="95" rot="MR180" xref="yes" grouprefs="FEATHER"/>
 <wire x1="48.26" y1="-30.48" x2="38.1" y2="-30.48" width="0.1524" layer="91" grouprefs="FEATHER"/>
 <junction x="48.26" y="-30.48" grouprefs="FEATHER"/>
 <pinref part="FEATHER_LONG" gate="A" pin="7"/>
@@ -13524,8 +13526,10 @@ R2 3 2 {val-val*var/100}
 </segment>
 <segment>
 <pinref part="CAM_CONNECTOR" gate="A" pin="2"/>
-<wire x1="142.24" y1="63.5" x2="142.24" y2="48.26" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
-<label x="142.24" y="48.26" size="1.778" layer="95" rot="R270" xref="yes" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="139.7" y1="60.96" x2="139.7" y2="53.34" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="139.7" y1="53.34" x2="137.16" y2="53.34" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="137.16" y1="53.34" x2="137.16" y2="43.18" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<label x="137.16" y="43.18" size="1.778" layer="95" rot="R270" xref="yes" grouprefs="CAMERA_CONNECTOR"/>
 </segment>
 </net>
 <net name="USB_5V" class="0">
@@ -13553,12 +13557,12 @@ R2 3 2 {val-val*var/100}
 <net name="FEATHER_RX/AUDFX_TX" class="0">
 <segment>
 <wire x1="-45.72" y1="-27.94" x2="-38.1" y2="-27.94" width="0.1524" layer="91" grouprefs="AUDIO_FX"/>
-<label x="-38.1" y="-27.94" size="1.778" layer="95" xref="yes" grouprefs="AUDIO_FX"/>
+<label x="-38.1" y="-27.94" size="1.4224" layer="95" xref="yes" grouprefs="AUDIO_FX"/>
 <pinref part="AUDFX_R" gate="A" pin="5"/>
 </segment>
 <segment>
 <wire x1="48.26" y1="-48.26" x2="55.88" y2="-48.26" width="0.1524" layer="91" grouprefs="FEATHER"/>
-<label x="55.88" y="-48.26" size="1.778" layer="95" xref="yes" grouprefs="FEATHER"/>
+<label x="55.88" y="-48.26" size="1.4224" layer="95" xref="yes" grouprefs="FEATHER"/>
 <wire x1="48.26" y1="-48.26" x2="38.1" y2="-48.26" width="0.1524" layer="91" grouprefs="FEATHER"/>
 <junction x="48.26" y="-48.26" grouprefs="FEATHER"/>
 <pinref part="FEATHER_LONG" gate="A" pin="14"/>
@@ -13568,12 +13572,12 @@ R2 3 2 {val-val*var/100}
 <net name="FEATHER_TX/AUDFX_RX" class="0">
 <segment>
 <wire x1="-45.72" y1="-30.48" x2="-38.1" y2="-30.48" width="0.1524" layer="91" grouprefs="AUDIO_FX"/>
-<label x="-38.1" y="-30.48" size="1.778" layer="95" xref="yes" grouprefs="AUDIO_FX"/>
+<label x="-38.1" y="-30.48" size="1.4224" layer="95" xref="yes" grouprefs="AUDIO_FX"/>
 <pinref part="AUDFX_R" gate="A" pin="6"/>
 </segment>
 <segment>
 <wire x1="48.26" y1="-50.8" x2="55.88" y2="-50.8" width="0.1524" layer="91" grouprefs="FEATHER"/>
-<label x="55.88" y="-50.8" size="1.778" layer="95" xref="yes" grouprefs="FEATHER"/>
+<label x="55.88" y="-50.8" size="1.4224" layer="95" xref="yes" grouprefs="FEATHER"/>
 <wire x1="48.26" y1="-50.8" x2="38.1" y2="-50.8" width="0.1524" layer="91" grouprefs="FEATHER"/>
 <junction x="48.26" y="-50.8" grouprefs="FEATHER"/>
 <pinref part="FEATHER_LONG" gate="A" pin="15"/>
@@ -13588,7 +13592,7 @@ R2 3 2 {val-val*var/100}
 </segment>
 <segment>
 <wire x1="48.26" y1="-53.34" x2="55.88" y2="-53.34" width="0.1524" layer="91" grouprefs="FEATHER"/>
-<label x="55.88" y="-53.34" size="1.778" layer="95" xref="yes" grouprefs="FEATHER"/>
+<label x="55.88" y="-53.34" size="1.4224" layer="95" xref="yes" grouprefs="FEATHER"/>
 <wire x1="48.26" y1="-53.34" x2="38.1" y2="-53.34" width="0.1524" layer="91" grouprefs="FEATHER"/>
 <junction x="48.26" y="-53.34" grouprefs="FEATHER"/>
 <pinref part="FEATHER_LONG" gate="A" pin="16"/>
@@ -13609,7 +13613,7 @@ R2 3 2 {val-val*var/100}
 </segment>
 <segment>
 <wire x1="48.26" y1="-33.02" x2="55.88" y2="-33.02" width="0.1524" layer="91" grouprefs="FEATHER"/>
-<label x="55.88" y="-33.02" size="1.778" layer="95" rot="MR180" xref="yes" grouprefs="FEATHER"/>
+<label x="55.88" y="-33.02" size="1.4224" layer="95" rot="MR180" xref="yes" grouprefs="FEATHER"/>
 <wire x1="48.26" y1="-33.02" x2="38.1" y2="-33.02" width="0.1524" layer="91" grouprefs="FEATHER"/>
 <junction x="48.26" y="-33.02" grouprefs="FEATHER"/>
 <pinref part="FEATHER_LONG" gate="A" pin="8"/>
@@ -13631,8 +13635,10 @@ R2 3 2 {val-val*var/100}
 <net name="IMG_CONT" class="0">
 <segment>
 <pinref part="CAM_CONNECTOR" gate="A" pin="1"/>
-<wire x1="139.7" y1="63.5" x2="139.7" y2="48.26" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
-<label x="139.7" y="48.26" size="1.778" layer="95" rot="R270" xref="yes" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="137.16" y1="60.96" x2="137.16" y2="55.88" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="137.16" y1="55.88" x2="132.08" y2="55.88" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="132.08" y1="55.88" x2="132.08" y2="43.18" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<label x="132.08" y="43.18" size="1.778" layer="95" rot="R270" xref="yes" grouprefs="CAMERA_CONNECTOR"/>
 </segment>
 <segment>
 <pinref part="FEATHER_SHORT" gate="A" pin="8"/>
@@ -13651,8 +13657,7 @@ R2 3 2 {val-val*var/100}
 </segment>
 <segment>
 <pinref part="R5" gate="G$1" pin="1"/>
-<wire x1="144.78" y1="38.1" x2="144.78" y2="30.48" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
-<label x="144.78" y="30.48" size="1.778" layer="95" rot="R270" xref="yes" grouprefs="CAMERA_CONNECTOR"/>
+<label x="142.24" y="43.18" size="1.778" layer="95" rot="R270" xref="yes" grouprefs="CAMERA_CONNECTOR"/>
 </segment>
 </net>
 <net name="NOIS_GATE_SET" class="0">
@@ -13675,7 +13680,7 @@ R2 3 2 {val-val*var/100}
 <net name="N$1" class="0">
 <segment>
 <pinref part="CAM_CONNECTOR" gate="A" pin="3"/>
-<wire x1="144.78" y1="63.5" x2="144.78" y2="48.26" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
+<wire x1="142.24" y1="60.96" x2="142.24" y2="53.34" width="0.1524" layer="91" grouprefs="CAMERA_CONNECTOR"/>
 <pinref part="R5" gate="G$1" pin="2"/>
 </segment>
 </net>

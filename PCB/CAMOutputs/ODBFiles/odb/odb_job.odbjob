@@ -1,7 +1,7 @@
 {
     "Header": {
         "Comment": "All values are metric (mm)",
-        "CreationDate": "2021-08-26T21:54:30Z",
+        "CreationDate": "2021-08-27T17:50:46Z",
         "GenerationSoftware": {
             "Application": "EAGLE",
             "Vendor": "Autodesk",
@@ -13,7 +13,7 @@
         "BoardThickness": 1.57,
         "LayerNumber": 2,
         "Name": {
-            "ProjectId": "PiedPiper_Camera_PCB v51"
+            "ProjectId": "PiedPiper_Camera_PCB_v55"
         },
         "Owner": "Vincent Vaughn-Uding <vaughnuv@oregonstate.edu>",
         "Size": {

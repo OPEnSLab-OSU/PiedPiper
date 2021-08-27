@@ -1,4 +1,4 @@
-Partlist exported from Team Hub: Vincent Vaughn-Uding   Project: PiedPiper  Board: PiedPiper_Camera_PCB v53 at 8/26/2021 2:54 PM
+Partlist exported from Team Hub: Vincent Vaughn-Uding   Project: PiedPiper  Board: PiedPiper_Camera_PCB v55 at 8/27/2021 10:50 AM
 
 Qty Value     Device            Package    Parts                                       Description                                                        AVAILABILITY DESCRIPTION                            MF             MP      PACKAGE POPULARITY PRICE SPICEMODEL SPICEPREFIX SPICEPREFIXL
 1             C-USC0805         C0805      C5                                          CAPACITOR, American symbol                                                                                                                            63                          C                       

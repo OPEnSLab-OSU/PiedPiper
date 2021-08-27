@@ -13144,6 +13144,8 @@ R2 3 2 {val-val*var/100}
 <classes>
 <class number="0" name="default" width="0" drill="0">
 </class>
+<class number="1" name="gndvia" width="0" drill="0">
+</class>
 </classes>
 <groups>
 <schematic_group name="CAMERA_CONNECTOR"/>

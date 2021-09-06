@@ -24,9 +24,6 @@
 
 // Signal processing settings:
 #define analogReadTime 23 // Number of microseconds required to execute analogRead()
-#define timeAvgWinSize 16 // Window size for finding average frequencies over time
-#define freqAvgWinSize 16 // Window size for finding average frequencies at an instant in time; used to reduce broadening & noise
-#define minFreq 100 // Cutoff frequency for high-pass filter, used to mitigate the effects of signal wander. Must be below target frequency.
 #define noiseFloorThresh 1.4 // uh
 
 //Hardware settings & information:
@@ -68,8 +65,8 @@ class piedPiper {
     bool checkFreqDomain(int t);
 
     void processSignal();
-    void timeSmoothFreq();
-    void smoothFreq();
+    void timeSmoothFreq(int avgWinSize);
+    void smoothFreq(int avgWinSize);
 
     void recordSamples(int samples);
     void saveBuffer();

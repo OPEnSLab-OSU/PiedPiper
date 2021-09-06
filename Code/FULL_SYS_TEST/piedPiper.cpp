@@ -53,7 +53,7 @@ bool piedPiper::initFreqTest()
     freqs[0][i] = vReal[i];
   }
 
-  smoothFreq();
+  smoothFreq(16);
 
   for (int i = 0; i < winSize / 2; i++)
   {
@@ -78,32 +78,54 @@ void piedPiper::processSignal()
     FFT.Compute(vReal, vImag, winSize, FFT_FORWARD); // Compute FFT
     FFT.ComplexToMagnitude(vReal, vImag, winSize); // Compute frequency magnitudes
 
-    for (int v = 0; v < round(100.0 / sampleFreq * winSize);v++)
-    {
-      vReal[v] = 0;
-    }
-    
     for (int v = 0; v < winSize / 2; v++)
     {
       freqs[t][v] = vReal[v];
     }
 
-    smoothFreq();
+  }
+
+  //Perform time smoothing
+  timeSmoothFreq(16);
+
+  //Perform frequency smoothing
+  for (int t = 0; t < winCount; t++)
+  {
+    for (int v = 0; v < winSize / 2; v++)
+    {
+      vReal[v] = freqs[t][v];
+    }
+
+    smoothFreq(4);
+
+    for (int v = 0; v < winSize / 2; v++)
+    {
+      freqs[t][v] = vReal[v];
+    }
+  }
+
+  // Subtract noise background
+  for (int t = 0; t < winCount; t++)
+  {
+    for (int v = 0; v < winSize / 2; v++)
+    {
+      vReal[v] = freqs[t][v];
+    }
+
+    smoothFreq(16);
 
     for (int v = 0; v < winSize / 2; v++)
     {
       freqs[t][v] = max(0, freqs[t][v] - noiseFloorThresh * vReal[v]);
     }
   }
-
-  timeSmoothFreq();
 }
 
 // Tests all of the frequency data stored in [freqs], and determines if an insect is present.
 bool piedPiper::fullSignalTest()
 {
   int count = 0;
-  
+
   // Determine if there are target frequency peaks at every window in the frequency data array
   for (int t = 0; t < winCount; t++)
   {
@@ -118,12 +140,12 @@ bool piedPiper::fullSignalTest()
 }
 
 // Performs rectangular smoothing on frequency data stored in [vReal]
-void piedPiper::smoothFreq()
+void piedPiper::smoothFreq(int avgWinSize)
 {
-  double inptDup[winSize];
+  float inptDup[winSize];
   int upperBound = 0;
   int lowerBound = 0;
-  int count = 0;
+  int avgCount = 0;
 
   for (int i = 0; i < winSize; i++)
   {
@@ -133,27 +155,27 @@ void piedPiper::smoothFreq()
 
   for (int i = 0; i < winSize; i++)
   {
-    lowerBound = max(0, i - freqAvgWinSize / 2);
-    upperBound = min(winSize - 1, i + freqAvgWinSize / 2);
-    count = 0;
+    lowerBound = max(0, i - avgWinSize / 2);
+    upperBound = min(winSize - 1, i + avgWinSize / 2);
+    avgCount = 0;
 
     for (int v = lowerBound; v < upperBound + 1; v++)
     {
       vReal[i] += inptDup[v];
-      count++;
+      avgCount++;
     }
 
-    vReal[i] /= count;
+    vReal[i] /= avgCount;
   }
 }
 
 // Performs rectangular smoothing on frequency data stored in [freqs] over time to reduce transient noise
-void piedPiper::timeSmoothFreq()
+void piedPiper::timeSmoothFreq(int avgWinSize)
 {
-  double inptDup[winCount];
+  float inptDup[winCount];
   int upperBound = 0;
   int lowerBound = 0;
-  int count = 0;
+  int avgCount = 0;
 
   for (int f = 0; f < winSize / 2; f++)
   {
@@ -165,17 +187,17 @@ void piedPiper::timeSmoothFreq()
 
     for (int t = 0; t < winCount; t++)
     {
-      lowerBound = max(0, t - timeAvgWinSize / 2);
-      upperBound = min(winCount / 2 - 1, t + timeAvgWinSize / 2);
-      count = 0;
+      lowerBound = max(0, t - avgWinSize / 2);
+      upperBound = min(winCount, t + avgWinSize / 2);
+      avgCount = 0;
 
       for (int i = lowerBound; i < upperBound + 1; i++)
       {
         freqs[t][f] += inptDup[i];
-        count++;
+        avgCount++;
       }
 
-      freqs[t][f] /= count;
+      freqs[t][f] /= avgCount;
     }
   }
 }
@@ -187,7 +209,7 @@ bool piedPiper::checkFreqDomain(int t)
   int upperIdx = ceil(((targetFreq + freqMargin) * 1.0) / sampleFreq * winSize);
 
   int count = 0;
-  
+
   for (int h = 1; h <= harms; h++)
   {
     for (int i = (h * lowerIdx); i < (h * upperIdx); i++)
@@ -224,20 +246,20 @@ void piedPiper::saveDetection()
   {
     data = SD.open("Detections.txt", FILE_WRITE);
   }
-  
+
   data.println("NUMBER");
   data.println(detectionNum, DEC);
-  
+
   data.println("TIME");
   data.println(millis(), DEC);
-  
+
   data.println("AUDIO");
-  
+
   for (int i = 0; i < sampleCount; i++)
   {
     data.println(sampleBuffer[i], DEC);
   }
-  
+
   data.close();
 }
 
@@ -256,11 +278,11 @@ void piedPiper::takePhoto(int n)
   digitalWrite(camPow, LOW);  // Power off the camera
   delay(50);                      // Wait for the camera to power off
   digitalWrite(camImg, LOW);
-  
+
   photoNum++;
 
   data = SD.open("Photos.txt", FILE_WRITE);
-  
+
   while (!data)
   {
     data = SD.open("Photos.txt", FILE_WRITE);
@@ -282,13 +304,13 @@ void piedPiper::playback()
 {
   Serial.println("Beginning playback");
   const byte soundNum = 0b11111110;
-  
+
   digitalWrite(SHTDWN, HIGH);
   digitalWrite(latch, LOW); //turns off register
   digitalWrite(clk, LOW); //sets clock low indicating the start of a byte
   shiftOut(dataPin, clk, MSBFIRST, soundNum); //sends data to shift register
   digitalWrite(latch, HIGH); //turns on output
-  
+
   delay(8000);
 
   digitalWrite(SHTDWN, LOW);
@@ -302,14 +324,14 @@ void piedPiper::reportAlive()
 {
   Serial.println("Logging aliveness...");
   lastLogTime = millis();
-  
+
   data = SD.open("Log.txt", FILE_WRITE);
 
   while (!data)
   {
     data = SD.open("Log.txt", FILE_WRITE);
   }
-  
+
   data.println(millis(), DEC);
   data.close();
 }

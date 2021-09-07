@@ -240,11 +240,11 @@ void piedPiper::recordSamples(int samples)
 void piedPiper::saveDetection()
 {
   Serial.println("Saving detection data...");
-  data = SD.open("Detections.txt", FILE_WRITE);
+  data = SD.open("DETS.txt", FILE_WRITE);
 
   while (!data)
   {
-    data = SD.open("Detections.txt", FILE_WRITE);
+    data = SD.open("DETS.txt", FILE_WRITE);
   }
 
   data.println("NUMBER");
@@ -281,11 +281,11 @@ void piedPiper::takePhoto(int n)
 
   photoNum++;
 
-  data = SD.open("Photos.txt", FILE_WRITE);
+  data = SD.open("PHOTO.txt", FILE_WRITE);
 
   while (!data)
   {
-    data = SD.open("Photos.txt", FILE_WRITE);
+    data = SD.open("PHOTO.txt", FILE_WRITE);
   }
 
   data.println("PHOTO#");
@@ -325,11 +325,11 @@ void piedPiper::reportAlive()
   Serial.println("Logging aliveness...");
   lastLogTime = millis();
 
-  data = SD.open("Log.txt", FILE_WRITE);
+  data = SD.open("LOG.txt", FILE_WRITE);
 
   while (!data)
   {
-    data = SD.open("Log.txt", FILE_WRITE);
+    data = SD.open("LOG.txt", FILE_WRITE);
   }
 
   data.println(millis(), DEC);

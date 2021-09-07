@@ -40,12 +40,14 @@
 //Camera [Camera power and image control to be changed to pins #1 (Tx) and #4 (D4)]
 #define camPow 4 // Power control pin [CHANGE]
 #define camImg 1 // Imaging control pin [CHANGE]
-#define imgInt 10000 // Miliseconds between detection photos [15000]
-#define imgTime 60000 // Time after a detection to be taking photos [600000]
-#define ctrlImgInt 90000 // Miliseconds between control photos [900000]
+#define imgInt 15000 // Miliseconds between detection photos [15000]
+#define imgTime 600000 // Time after a detection to be taking photos [600000]
+#define ctrlImgInt 900000 // Miliseconds between control photos [900000]
 
-#define logInt 360000 // Miliseconds between status logs [3600000]
-#define playbackInt 90000 // Milliseconds between playback [900000]
+#define logInt 3600000 // Miliseconds between status logs [3600000]
+#define playbackInt 900000 // Milliseconds between playback [900000]
+
+#define hypnos 0
 
 class piedPiper {
   private:

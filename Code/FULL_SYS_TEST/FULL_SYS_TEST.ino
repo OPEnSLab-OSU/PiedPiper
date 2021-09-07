@@ -44,6 +44,12 @@ void setup() {
     Serial.println("SD failed to initialize.");
   }
 
+  if (hypnos)
+  {
+    digitalWrite(5, LOW);
+    digitalWrite(6, HIGH);
+  }
+
   SD.end();
 }
 
@@ -60,21 +66,21 @@ void loop() {
     // Take photos after a detection
     if ((t - p.lastPhotoTime > imgInt) && (t - p.lastDetectionTime < imgTime) && p.detectionNum != 0)
     {
-      Serial.println("Taking detection photo");
+      //Serial.println("Taking detection photo");
       p.takePhoto(p.detectionNum);
     }
 
     //INtermittent playback
     if ((t - p.lastPlaybackTime) > playbackInt)
     {
-      Serial.println("Performing intermittent playback");
+      //Serial.println("Performing intermittent playback");
       p.playback();
     }
     
     // Take control photos
     if (t - p.lastPhotoTime > ctrlImgInt)
     {
-      Serial.println("Taking control photo");
+      //Serial.println("Taking control photo");
       p.takePhoto(0);
     }
     

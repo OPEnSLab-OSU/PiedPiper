@@ -6,19 +6,19 @@ piedPiper::piedPiper() {
 
 bool piedPiper::insectDetection()
 {
-  Serial.println("Running detection algorithm");
+  //Serial.println("Running detection algorithm");
   recordSamples(winSize);
 
   if (initFreqTest())
   {
-    Serial.println("Positive initial frequency test; recording & processing for full test...");
+    //Serial.println("Positive initial frequency test; recording & processing for full test...");
     recordSamples(sampleCount);
 
     processSignal();
 
     if (fullSignalTest())
     {
-      Serial.println("!POSITIVE DETECTION!");
+      //Serial.println("!POSITIVE DETECTION!");
       detectionNum++;
       saveDetection();
       lastDetectionTime = millis();
@@ -239,7 +239,7 @@ void piedPiper::recordSamples(int samples)
 
 void piedPiper::saveDetection()
 {
-  Serial.println("Saving detection data...");
+  //Serial.println("Saving detection data...");
   data = SD.open("DETS.txt", FILE_WRITE);
 
   while (!data)
@@ -265,7 +265,7 @@ void piedPiper::saveDetection()
 
 void piedPiper::takePhoto(int n)
 {
-  Serial.println("Taking photo...");
+  //Serial.println("Taking photo...");
   lastPhotoTime = millis();
 
   digitalWrite(camImg, HIGH);
@@ -302,7 +302,7 @@ void piedPiper::takePhoto(int n)
 
 void piedPiper::playback()
 {
-  Serial.println("Beginning playback");
+  //Serial.println("Beginning playback");
   const byte soundNum = 0b11111110;
 
   digitalWrite(SHTDWN, HIGH);
@@ -322,7 +322,7 @@ void piedPiper::playback()
 
 void piedPiper::reportAlive()
 {
-  Serial.println("Logging aliveness...");
+  //Serial.println("Logging aliveness...");
   lastLogTime = millis();
 
   data = SD.open("LOG.txt", FILE_WRITE);

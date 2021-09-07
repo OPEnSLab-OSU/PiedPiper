@@ -11,12 +11,12 @@
 // The product of sampleFreq and recordTime must be an integer multiple of winSize.
 
 // Detection algorithm settings:
-#define targetFreq 172 // Primary (first harmonic) frequency of mating call to search for
-#define freqMargin 15 // Margin for error of target frequency
+#define targetFreq 175 // Primary (first harmonic) frequency of mating call to search for
+#define freqMargin 25 // Margin for error of target frequency
 #define harms 2 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
-#define significanceThresh 15 // Threshhold for magnitude of target frequency peak to be considered a positive detection
-#define signalLen 7 // Expected length of the mating call
-#define detectionEfficiency 0.5 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
+#define significanceThresh 20 // Threshhold for magnitude of target frequency peak to be considered a positive detection
+#define signalLen 6 // Expected length of the mating call
+#define detectionEfficiency 0.75 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
 
 // Signal processing settings:
 #define analogReadTime 23 // Number of microseconds required to execute analogRead()
@@ -32,6 +32,8 @@
 #define latch 10
 #define dataPin 12
 #define SHTDWN 5
+
+#define hypnos 0
 
 int opmode = 0;
 
@@ -57,7 +59,13 @@ void setup() {
   //indicator.setPixelColor(0, 64, 0, 0);
   //indicator.show();
 
-  pinMode(A2, INPUT);
+  if (hypnos)
+  {
+    digitalWrite(5, LOW);
+    digitalWrite(6, HIGH);
+  }
+  
+  pinMode(audIn, INPUT);
 
   while (1)
   {
@@ -88,7 +96,7 @@ void setup() {
     if (opmode == 0)
     {
       for (int i = 0; i < printBuffSize; i++) {
-        sampleBuffer[i] = analogRead(A2);
+        sampleBuffer[i] = analogRead(audIn);
 
         delayMicroseconds(delayTime);
 
@@ -129,7 +137,7 @@ void setup() {
 
       for (int i = 0; i < sampleCount; i++)
       {
-        sampleBuffer[i] = analogRead(A2);
+        sampleBuffer[i] = analogRead(audIn);
 
         delayMicroseconds(delayTime);
       }

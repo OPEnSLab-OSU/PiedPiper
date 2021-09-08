@@ -61,12 +61,22 @@ void setup() {
 
   if (hypnos)
   {
+    pinMode(5, OUTPUT);
+    pinMode(6, OUTPUT);
     digitalWrite(5, LOW);
     digitalWrite(6, HIGH);
   }
   
   pinMode(audIn, INPUT);
+  pinMode(camPow, OUTPUT);
+  pinMode(camImg, OUTPUT);
+  pinMode(clk, OUTPUT);
+  pinMode(latch, OUTPUT);
+  pinMode(dataPin, OUTPUT);
+  pinMode(SHTDWN, OUTPUT);
 
+  digitalWrite(camPow, LOW);
+  
   playback();
   
   while (1)
@@ -405,7 +415,7 @@ void recordSamples(int samples)
 void playback()
 {
   //Serial.println("Beginning playback");
-  const byte soundNum = 0b00000001;
+  const byte soundNum = 0b11111110;
 
   digitalWrite(SHTDWN, HIGH);
   digitalWrite(latch, LOW); //turns off register

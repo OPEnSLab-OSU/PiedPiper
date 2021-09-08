@@ -20,6 +20,8 @@ void setup() {
 
   if (hypnos)
   {
+    pinMode(5, OUTPUT);
+    pinMode(6, OUTPUT);
     digitalWrite(5, LOW);
     digitalWrite(6, HIGH);
   }
@@ -32,8 +34,8 @@ void setup() {
   pinMode(dataPin, OUTPUT);
   pinMode(SHTDWN, OUTPUT);
 
-  digitalWrite(camPow, LOW);
-  digitalWrite(camImg, LOW);
+  digitalWrite(camPow, HIGH);
+  digitalWrite(camImg, HIGH);
 
   Serial.println("Pins configured, performing playback...");
   
@@ -50,7 +52,8 @@ void setup() {
     Serial.println("SD failed to initialize.");
   }
 
-
+  digitalWrite(camPow, LOW);
+  digitalWrite(camImg, LOW);
 
   SD.end();
 }

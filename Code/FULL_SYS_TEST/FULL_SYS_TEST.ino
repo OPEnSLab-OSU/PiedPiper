@@ -17,6 +17,12 @@ void setup() {
 
   Serial.println("Initializing");
   analogReadResolution(12);
+
+  if (hypnos)
+  {
+    digitalWrite(5, LOW);
+    digitalWrite(6, HIGH);
+  }
   
   pinMode(audIn, INPUT);
   pinMode(camPow, OUTPUT);
@@ -44,11 +50,7 @@ void setup() {
     Serial.println("SD failed to initialize.");
   }
 
-  if (hypnos)
-  {
-    digitalWrite(5, LOW);
-    digitalWrite(6, HIGH);
-  }
+
 
   SD.end();
 }

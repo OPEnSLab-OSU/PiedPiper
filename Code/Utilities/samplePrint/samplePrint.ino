@@ -67,6 +67,8 @@ void setup() {
   
   pinMode(audIn, INPUT);
 
+  playback();
+  
   while (1)
   {
 
@@ -397,4 +399,17 @@ void recordSamples(int samples)
     sampleBuffer[i] = analogRead(audIn);
     delayMicroseconds(delayTime);
   }
+}
+
+
+void playback()
+{
+  //Serial.println("Beginning playback");
+  const byte soundNum = 0b00000001;
+
+  digitalWrite(SHTDWN, HIGH);
+  digitalWrite(latch, LOW); //turns off register
+  digitalWrite(clk, LOW); //sets clock low indicating the start of a byte
+  shiftOut(dataPin, clk, MSBFIRST, soundNum); //sends data to shift register
+  digitalWrite(latch, HIGH); //turns on output
 }

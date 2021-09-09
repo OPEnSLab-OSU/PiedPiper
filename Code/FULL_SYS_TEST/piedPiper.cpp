@@ -311,12 +311,12 @@ void piedPiper::playback()
   shiftOut(dataPin, clk, MSBFIRST, soundNum); //sends data to shift register
   digitalWrite(latch, HIGH); //turns on output
 
-  delay(7000);
+  delay(6300);
 
   digitalWrite(SHTDWN, LOW);
   digitalWrite(latch, LOW); //turns off register
   digitalWrite(clk, LOW); //sets clock low indicating the start of a byte
-  shiftOut(dataPin, clk, MSBFIRST, 0b11111111); //sends data to shift register
+  shiftOut(dataPin, clk, MSBFIRST, 0b00000000); //sends data to shift register
   digitalWrite(latch, HIGH); //turns on output
 }
 

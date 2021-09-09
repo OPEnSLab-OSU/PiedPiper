@@ -55,7 +55,7 @@ void setup() {
   digitalWrite(camPow, LOW);
   digitalWrite(camImg, LOW);
 
-  SD.end();
+  //SD.end();
 }
 
 void loop() {

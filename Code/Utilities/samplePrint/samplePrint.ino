@@ -32,6 +32,8 @@
 #define latch 10
 #define dataPin 12
 #define SHTDWN 5
+#define camPow 4 // Power control pin [CHANGE]
+#define camImg 1 // Imaging control pin [CHANGE]
 
 #define hypnos 0
 

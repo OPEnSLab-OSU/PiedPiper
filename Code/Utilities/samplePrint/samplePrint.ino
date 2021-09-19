@@ -109,6 +109,8 @@ void setup() {
 
     if (opmode == 0)
     {
+      analogRead(audIn);
+      
       for (int i = 0; i < printBuffSize; i++) {
         sampleBuffer[i] = analogRead(audIn);
 

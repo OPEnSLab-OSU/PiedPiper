@@ -11,11 +11,13 @@ bool piedPiper::InitializeAudioStream()
   return ITimer0.attachInterruptInterval(sampleDelayTime, RecordSample);
 }
 
+// Used to stop the interrupt timer for sample recording, so that it does not interfere with SD and Serial communication
 void piedPiper::StopAudioStream()
 {
   ITimer0.detachInterrupt();
 }
 
+// Used to restart the sample recording timer once SPI and Serial communications have completed.
 void piedPiper::RestartAudioStream()
 {
   ITimer0.reattachInterrupt();
@@ -34,6 +36,7 @@ void piedPiper::RecordSample(void)
   }
 }
 
+// Determines if the sample buffer is full, and is ready to have frequencies computed.
 bool piedPiper::InputSampleBufferFull()
 {
   return !(inputSampleBufferPtr < FFT_WIN_SIZE);
@@ -169,6 +172,7 @@ bool piedPiper::CheckFreqDomain(int t)
   return (count > 0);
 }
 
+// Records detection data to the uSD card, and clears all audio buffers (both sample & frequency data)
 void piedPiper::SaveDetection()
 {
   StopAudioStream();
@@ -234,6 +238,7 @@ void piedPiper::SaveDetection()
   RestartAudioStream();
 }
 
+// Takes a single photo, and records what time and detection it corresponds to
 void piedPiper::TakePhoto(int n)
 {
   StopAudioStream();
@@ -280,6 +285,7 @@ void piedPiper::TakePhoto(int n)
   RestartAudioStream();
 }
 
+// Plays back a female mating call using the vibration exciter
 void piedPiper::Playback()
 {
   StopAudioStream();
@@ -294,6 +300,7 @@ void piedPiper::Playback()
   RestartAudioStream();
 }
 
+// Records the most recent time that the unit is alive.
 void piedPiper::LogAlive()
 {
   StopAudioStream();
@@ -322,10 +329,12 @@ void piedPiper::LogAlive()
   RestartAudioStream();
 }
 
+//+
 int piedPiper::IterateCircularBufferPtr(int currentVal, int arrSize)
 {
   return (currentVal + 1) - arrSize * ((currentVal + 1) == arrSize);
 }
+
 
 unsigned long piedPiper::GetLastLogTime()
 {

@@ -1,20 +1,25 @@
 #include "piedPiper.h"
+#include "SAMDTimerInterrupt.h"
 
+SAMDTimer ITimer0(TIMER_TC3);
 
-// Mode 1: Print samples to plotter
-// Mode 2: Print info to monitor, use debug LED
-// Blue: Waiting for positive initial frequency domain test
-// Red: Initial frequency domain test positive; recording & analyzing samples
-// Green: Positive detection
+void stopInterruptTimer()
+{
+  ITimer0.detachInterrupt();
+}
 
+void restartInterruptTimer()
+{
+  ITimer0.reattachInterrupt();
+}
 
-piedPiper p;
+piedPiper p(restartInterruptTimer, stopInterruptTimer);
 int t = 0;
 
 void setup() {
   Serial.begin(2000000);
   analogReadResolution(12);
-  delay(1000);
+  delay(4000);
 
   Serial.println("Initializing");
   
@@ -42,7 +47,9 @@ void setup() {
   digitalWrite(HYPNOS_3VR, HIGH);
   SD.end();
 
-  p.InitializeAudioStream();
+  p.Playback();
+
+  ITimer0.attachInterruptInterval(sampleDelayTime, p.RecordSample);
 }
 
 void loop() {
@@ -59,6 +66,7 @@ void loop() {
   }
   else
   {
+    
     unsigned long t = millis();
 
     //Intermittent playback
@@ -76,6 +84,7 @@ void loop() {
     // Control photos
     else if (t - p.GetLastPhotoTime() > CTRL_IMG_INT)
     {
+      
       p.TakePhoto(0);
     }
 
@@ -85,20 +94,4 @@ void loop() {
       p.LogAlive();
     }
   }
-
-  //public:
-  //functions:
-  //p.InputSampleBufferFull() => bool
-  //p.ProcessNewData() => void
-  //p.InsectDetection() => bool
-  //p.Playback() => void
-  //p.LogAlive() => void
-  //p.TakePhoto() => void
-  //p.Playback() => void
-  //p.GetLastPlaybackTime() => unsigned long
-  //p.GetLastPhotoTime() => unsigned long
-  //p.GetLastDetectionTime() => unsigned long
-  //p.GetLastLogTime() => unsigned long
-  //p.GetDetectionNum() => int
-  //private:
 }

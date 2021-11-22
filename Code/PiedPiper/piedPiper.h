@@ -1,13 +1,8 @@
-
-/*
-  Pied Piper
-*/
-
 #include <arduinoFFTFloat.h>
 #include <Arduino.h>
 #include <SD.h>
 #include <SPI.h>
-#include "SAMDTimerInterrupt.h"
+
 /****************************************************/
 
 // Audio sampling settings:
@@ -20,10 +15,10 @@
 #define TGT_FREQ 175 // Primary (first harmonic) frequency of mating call to search for
 #define FREQ_MARGIN 25 // Margin for error of target frequency
 #define HARMONICS 2 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
-#define SIG_THRESH 20 // Threshhold for magnitude of target frequency peak to be considered a positive detection
+#define SIG_THRESH 15 // Threshhold for magnitude of target frequency peak to be considered a positive detection
 #define EXP_SIGNAL_LEN 6 // Expected length of the mating call
 #define EXP_DET_EFF 0.75 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
-#define NOISE_FLOOR_MULT 1.1 // uh
+#define NOISE_FLOOR_MULT 1.0 // uh
 #define TIME_AVG_WIN_COUNT 4 // Number of frequency windows used to average frequencies across time
 
 //Hardware settings & information:
@@ -41,11 +36,11 @@
 #define LOG_INT 3600000 // Miliseconds between status logs [3600000]
 #define PLAYBACK_INT 900000 // Milliseconds between playback [900000]
 
-SAMDTimer ITimer0(TIMER_TC3);
     // Volatile audio input buffer (LINEAR)
 volatile static short inputSampleBuffer[FFT_WIN_SIZE];
 volatile static int inputSampleBufferPtr = 0;
-    
+static const int sampleDelayTime = 1000000 / SAMPLE_FREQ;
+
 class piedPiper {
   private:
     arduinoFFT FFT = arduinoFFT();  //object for FFT in frequency calcuation
@@ -54,7 +49,7 @@ class piedPiper {
     // This must be an integer multiple of the window size:
     static const int sampleCount = REC_TIME * SAMPLE_FREQ + FFT_WIN_SIZE * TIME_AVG_WIN_COUNT; // [Number of samples required to comprise small + large frequency arrays]
     static const int freqWinCount = REC_TIME * SAMPLE_FREQ / FFT_WIN_SIZE;
-    static const int sampleDelayTime = 1000000 / SAMPLE_FREQ;
+    
 
     // Samples array (CIRCULAR)
     // (Should I break this into time windows that directly correspond to the frequency array windows?)
@@ -86,16 +81,20 @@ class piedPiper {
 
     void StopAudioStream();
     void RestartAudioStream();
-    static void RecordSample();
+
     
     void SmoothFreqs(int winSize);
     bool CheckFreqDomain(int t);
     
     void ResetSPI();
 
-  public:
-    piedPiper();
+    void(*timerStart)();
+    void(*timerStop)();
 
+  public:
+    piedPiper(void(*tStart)(), void(*tStop)());
+
+    static void RecordSample();
     bool InputSampleBufferFull();
     void ProcessData();
     bool InsectDetection();

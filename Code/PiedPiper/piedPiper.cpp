@@ -1,26 +1,23 @@
 #include "piedPiper.h"
 
 // Class initialization
-piedPiper::piedPiper() {
-
-}
-
-// This initializes the hardware timer used to asynchronously execute RecordSample() to record audio data.
-bool piedPiper::InitializeAudioStream()
-{
-  return ITimer0.attachInterruptInterval(sampleDelayTime, RecordSample);
+piedPiper::piedPiper(void(*tStart)(), void(*tStop)()) {
+  timerStart = tStart;
+  timerStop = tStop;
 }
 
 // Used to stop the interrupt timer for sample recording, so that it does not interfere with SD and Serial communication
 void piedPiper::StopAudioStream()
 {
-  ITimer0.detachInterrupt();
+  (*timerStop)();
+  Serial.println("Audio stream stopped");
 }
 
 // Used to restart the sample recording timer once SPI and Serial communications have completed.
 void piedPiper::RestartAudioStream()
 {
-  ITimer0.reattachInterrupt();
+  Serial.println("Restarting audio stream");
+  (*timerStart)();
 }
 
 // This records new audio samples into the sample buffer asyncronously using a hardware timer.
@@ -55,6 +52,7 @@ void piedPiper::ProcessData()
     vReal[i] = inputSampleBuffer[i];
     vImag[i] = 0.0;
     samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
+    //Serial.println(inputSampleBuffer[i]);
   }
 
   inputSampleBufferPtr = 0;
@@ -68,7 +66,7 @@ void piedPiper::ProcessData()
   for (int i = 0; i < FFT_WIN_SIZE / 2; i++)
   {
     rawFreqs[rawFreqsPtr][i] = vReal[i];
-    vReal[i] = 0;
+    vReal[i] = 0.0;
   }
 
   rawFreqsPtr = IterateCircularBufferPtr(rawFreqsPtr, TIME_AVG_WIN_COUNT);
@@ -77,7 +75,7 @@ void piedPiper::ProcessData()
   for (int t = 0; t < TIME_AVG_WIN_COUNT; t++)
   {
     for (int f = 0; f < FFT_WIN_SIZE / 2; f++){
-      vReal[f] += rawFreqs[t][f] * 0.25;
+      vReal[f] += rawFreqs[t][f] * (1.0 / TIME_AVG_WIN_COUNT);
     }
   }
 
@@ -95,13 +93,13 @@ void piedPiper::ProcessData()
     freqs[freqsPtr][f] = freqs[freqsPtr][f] - max(0, NOISE_FLOOR_MULT * vReal[f]);
   }
 
-  IterateCircularBufferPtr(freqsPtr, freqWinCount);
+  freqsPtr = IterateCircularBufferPtr(freqsPtr, freqWinCount);
 }
 
 // Performs rectangular smoothing on frequency data stored in [vReal]
 void piedPiper::SmoothFreqs(int winSize)
 {
-  float inptDup[FFT_WIN_SIZE];
+  float inptDup[FFT_WIN_SIZE / 2];
   int upperBound = 0;
   int lowerBound = 0;
   int avgCount = 0;
@@ -112,10 +110,10 @@ void piedPiper::SmoothFreqs(int winSize)
     vReal[i] = 0;
   }
 
-  for (int i = 0; i < winSize; i++)
+  for (int i = 0; i < FFT_WIN_SIZE / 2; i++)
   {
     lowerBound = max(0, i - winSize / 2);
-    upperBound = min(winSize - 1, i + winSize / 2);
+    upperBound = min((FFT_WIN_SIZE / 2) - 1, i + winSize / 2);
     avgCount = 0;
 
     for (int v = lowerBound; v < upperBound + 1; v++)
@@ -142,12 +140,13 @@ bool piedPiper::InsectDetection()
       count++;
     }
   }
-
+  
+  Serial.println(count);
   // If the number of windows that contain target frequency peaks is at or above the expected number that would be present
   return (count >= EXP_SIGNAL_LEN * (freqWinCount / REC_TIME) * EXP_DET_EFF);
 }
 
-// Determines if there is a peak in the target frequency range (including harmonics).
+// Determines if there is a peak in the target frequency range at a specific time window (including harmonics).
 bool piedPiper::CheckFreqDomain(int t)
 {
   int lowerIdx = floor(((TGT_FREQ - FREQ_MARGIN) * 1.0) / SAMPLE_FREQ * FFT_WIN_SIZE);
@@ -182,13 +181,16 @@ void piedPiper::SaveDetection()
   digitalWrite(HYPNOS_3VR, LOW);
   detectionNum++;
 
+  Serial.println("Positive detection");
+  
   for (int i = 0; i < 200; i++)
   {
     if (SD.begin(SD_CS))
     {
       break;
     }
-    
+    Serial.print("SD failed to initialize in SaveDetection on try #");
+    Serial.println(i);
     delay(10);
   }
 
@@ -264,7 +266,8 @@ void piedPiper::TakePhoto(int n)
     {
       break;
     }
-    
+    Serial.print("SD failed to initialize in TakePhoto on try #");
+    Serial.println(i);
     delay(10);
   }
 
@@ -314,7 +317,9 @@ void piedPiper::LogAlive()
     {
       break;
     }
-    
+
+    Serial.print("SD failed to initialize in LogAlive on try #");
+    Serial.println(i);
     delay(10);
   }
 
@@ -332,7 +337,14 @@ void piedPiper::LogAlive()
 //+
 int piedPiper::IterateCircularBufferPtr(int currentVal, int arrSize)
 {
-  return (currentVal + 1) - arrSize * ((currentVal + 1) == arrSize);
+  if ((currentVal + 1) == arrSize)
+  {
+    return 0;
+  }
+  else
+  {
+    return (currentVal + 1);
+  }
 }
 
 

@@ -68,14 +68,13 @@ void piedPiper::ProcessData()
     rawFreqs[rawFreqsPtr][i] = vReal[i];
     vReal[i] = 0.0;
   }
-
-  rawFreqsPtr = IterateCircularBufferPtr(rawFreqsPtr, TIME_AVG_WIN_COUNT);
   
+  rawFreqsPtr = IterateCircularBufferPtr(rawFreqsPtr, TIME_AVG_WIN_COUNT);sd
 
   for (int t = 0; t < TIME_AVG_WIN_COUNT; t++)
   {
     for (int f = 0; f < FFT_WIN_SIZE / 2; f++){
-      vReal[f] += rawFreqs[t][f] * (1.0 / TIME_AVG_WIN_COUNT);
+      vReal[f] += rawFreqs[t][f] / TIME_AVG_WIN_COUNT;
     }
   }
 
@@ -90,7 +89,7 @@ void piedPiper::ProcessData()
 
   for (int f = 0; f < FFT_WIN_SIZE / 2; f++)
   {
-    freqs[freqsPtr][f] = freqs[freqsPtr][f] - max(0, NOISE_FLOOR_MULT * vReal[f]);
+    freqs[freqsPtr][f] = freqs[freqsPtr][f] - NOISE_FLOOR_MULT * vReal[f];
   }
 
   freqsPtr = IterateCircularBufferPtr(freqsPtr, freqWinCount);
@@ -104,7 +103,7 @@ void piedPiper::SmoothFreqs(int winSize)
   int lowerBound = 0;
   int avgCount = 0;
 
-  for (int i = 0; i < winSize; i++)
+  for (int i = 0; i < (FFT_WIN_SIZE / 2); i++)
   {
     inptDup[i] = vReal[i];
     vReal[i] = 0;
@@ -163,6 +162,7 @@ bool piedPiper::CheckFreqDomain(int t)
         if (freqs[t][i] > SIG_THRESH)
         {
           count++;
+          continue;
         }
       }
     }
@@ -174,6 +174,7 @@ bool piedPiper::CheckFreqDomain(int t)
 // Records detection data to the uSD card, and clears all audio buffers (both sample & frequency data)
 void piedPiper::SaveDetection()
 {
+  delay(1000);
   StopAudioStream();
   lastDetectionTime = millis();
   

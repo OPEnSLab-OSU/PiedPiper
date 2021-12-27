@@ -84,7 +84,6 @@ void loop() {
     // Control photos
     else if (t - p.GetLastPhotoTime() > CTRL_IMG_INT)
     {
-      
       p.TakePhoto(0);
     }
 

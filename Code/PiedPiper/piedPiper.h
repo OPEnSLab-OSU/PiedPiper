@@ -15,7 +15,7 @@
 #define TGT_FREQ 175 // Primary (first harmonic) frequency of mating call to search for
 #define FREQ_MARGIN 25 // Margin for error of target frequency
 #define HARMONICS 2 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
-#define SIG_THRESH 15 // Threshhold for magnitude of target frequency peak to be considered a positive detection
+#define SIG_THRESH 18 // Threshhold for magnitude of target frequency peak to be considered a positive detection
 #define EXP_SIGNAL_LEN 6 // Expected length of the mating call
 #define EXP_DET_EFF 0.75 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
 #define NOISE_FLOOR_MULT 1.0 // uh

@@ -69,7 +69,7 @@ void piedPiper::ProcessData()
     vReal[i] = 0.0;
   }
   
-  rawFreqsPtr = IterateCircularBufferPtr(rawFreqsPtr, TIME_AVG_WIN_COUNT);sd
+  rawFreqsPtr = IterateCircularBufferPtr(rawFreqsPtr, TIME_AVG_WIN_COUNT);
 
   for (int t = 0; t < TIME_AVG_WIN_COUNT; t++)
   {
@@ -109,7 +109,7 @@ void piedPiper::SmoothFreqs(int winSize)
     vReal[i] = 0;
   }
 
-  for (int i = 0; i < FFT_WIN_SIZE / 2; i++)
+  for (int i = 0; i < (FFT_WIN_SIZE / 2); i++)
   {
     lowerBound = max(0, i - winSize / 2);
     upperBound = min((FFT_WIN_SIZE / 2) - 1, i + winSize / 2);

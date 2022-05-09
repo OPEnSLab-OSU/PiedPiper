@@ -220,6 +220,7 @@ STDF
 <text x="59.69" y="63.5" size="2.1844" layer="25" align="center">PIED PIPER
 V3</text>
 <text x="31.75" y="66.3575" size="0.8128" layer="25" rot="R90" align="center">SSM2166</text>
+<text x="7.62" y="25.4" size="0.8128" layer="25" rot="R90" align="center">GND</text>
 </plain>
 <libraries>
 <library name="Capacitor">
@@ -1638,7 +1639,7 @@ design rules under a new name.</description>
 <attribute name="VALUE" x="6.3983" y="64.77" size="1.27" layer="27" rot="R270" align="top-center"/>
 </element>
 <element name="3VR" library="pinhead" library_urn="urn:adsk.eagle:library:325" package="1X02" package3d_urn="urn:adsk.eagle:package:22435/2" value="" x="6.35" y="21.59" smashed="yes">
-<attribute name="NAME" x="3.7338" y="23.4188" size="1.27" layer="25" ratio="10"/>
+<attribute name="NAME" x="5.08" y="25.4" size="0.8128" layer="25" ratio="10" rot="R90" align="center"/>
 <attribute name="POPULARITY" value="98" x="6.35" y="21.59" size="1.778" layer="27" display="off"/>
 <attribute name="VALUE" x="3.81" y="18.415" size="1.27" layer="27"/>
 </element>
@@ -8960,6 +8961,7 @@ design rules under a new name.</description>
 <via x="16.51" y="47.625" extent="1-16" drill="0.35"/>
 <via x="54.62343125" y="3.82343125" extent="1-16" drill="0.35"/>
 <via x="17.78" y="59.69" extent="1-16" drill="0.35"/>
+<via x="35.56" y="52.07" extent="1-16" drill="0.35"/>
 </signal>
 <signal name="FEATHER_5V">
 <contactref element="MICROPHONE_PREAMP" pad="14"/>

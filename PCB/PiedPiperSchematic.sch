@@ -6230,26 +6230,26 @@ W = angled&lt;p&gt;
 <instance part="GND9" gate="1" x="-45.72" y="-58.42" smashed="yes" rot="R270" grouprefs="FEATHER+HYPNOS">
 <attribute name="VALUE" x="-48.26" y="-55.88" size="1.778" layer="96" rot="R270"/>
 </instance>
-<instance part="AMPLIFIER" gate="A" x="-167.64" y="-68.58" smashed="yes" rot="R180" grouprefs="AUD_OUT">
-<attribute name="NAME" x="-161.29" y="-76.835" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="-161.29" y="-58.42" size="1.778" layer="96" rot="R180"/>
+<instance part="AMPLIFIER" gate="A" x="-167.64" y="-73.66" smashed="yes" rot="R180" grouprefs="AUD_OUT">
+<attribute name="NAME" x="-161.29" y="-81.915" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-161.29" y="-63.5" size="1.778" layer="96" rot="R180"/>
 </instance>
-<instance part="GND10" gate="1" x="-142.24" y="-81.28" smashed="yes" grouprefs="AUD_OUT">
-<attribute name="VALUE" x="-144.78" y="-83.82" size="1.778" layer="96"/>
+<instance part="GND10" gate="1" x="-142.24" y="-86.36" smashed="yes" grouprefs="AUD_OUT">
+<attribute name="VALUE" x="-144.78" y="-88.9" size="1.778" layer="96"/>
 </instance>
-<instance part="GND11" gate="1" x="-124.46" y="-81.28" smashed="yes" grouprefs="AUD_OUT">
-<attribute name="VALUE" x="-127" y="-83.82" size="1.778" layer="96"/>
+<instance part="GND11" gate="1" x="-124.46" y="-86.36" smashed="yes" grouprefs="AUD_OUT">
+<attribute name="VALUE" x="-127" y="-88.9" size="1.778" layer="96"/>
 </instance>
-<instance part="C7" gate="G$1" x="-111.76" y="-71.12" smashed="yes" grouprefs="AUD_OUT">
-<attribute name="NAME" x="-109.22" y="-68.58" size="1.778" layer="95"/>
-<attribute name="VALUE" x="-109.22" y="-71.12" size="1.778" layer="96"/>
+<instance part="C7" gate="G$1" x="-111.76" y="-76.2" smashed="yes" grouprefs="AUD_OUT">
+<attribute name="NAME" x="-109.22" y="-73.66" size="1.778" layer="95"/>
+<attribute name="VALUE" x="-109.22" y="-76.2" size="1.778" layer="96"/>
 </instance>
-<instance part="GND12" gate="1" x="-111.76" y="-81.28" smashed="yes" grouprefs="AUD_OUT">
-<attribute name="VALUE" x="-114.3" y="-83.82" size="1.778" layer="96"/>
+<instance part="GND12" gate="1" x="-111.76" y="-86.36" smashed="yes" grouprefs="AUD_OUT">
+<attribute name="VALUE" x="-114.3" y="-88.9" size="1.778" layer="96"/>
 </instance>
-<instance part="R9" gate="G$1" x="-101.6" y="-63.5" smashed="yes" grouprefs="AUD_OUT">
-<attribute name="NAME" x="-101.6" y="-60.7314" size="1.778" layer="95" align="center"/>
-<attribute name="VALUE" x="-101.6" y="-66.802" size="1.778" layer="96" align="center"/>
+<instance part="R9" gate="G$1" x="-101.6" y="-68.58" smashed="yes" grouprefs="AUD_OUT">
+<attribute name="NAME" x="-101.6" y="-65.8114" size="1.778" layer="95" align="center"/>
+<attribute name="VALUE" x="-101.6" y="-71.882" size="1.778" layer="96" align="center"/>
 </instance>
 <instance part="CAMERA" gate="G$1" x="-157.48" y="-20.32" smashed="yes" rot="R180" grouprefs="CAMERA+LIGHT">
 <attribute name="NAME" x="-151.13" y="-33.655" size="1.778" layer="95" rot="R180"/>
@@ -6313,13 +6313,13 @@ W = angled&lt;p&gt;
 <instance part="GND16" gate="1" x="-149.86" y="-50.8" smashed="yes" grouprefs="CAMERA+LIGHT">
 <attribute name="VALUE" x="-152.4" y="-53.34" size="1.778" layer="96"/>
 </instance>
-<instance part="MP5" gate="G$1" x="-76.2" y="-81.28" smashed="yes">
-<attribute name="NAME" x="-76.2" y="-76.2" size="1.778" layer="95" align="center"/>
-<attribute name="VALUE" x="-76.2" y="-86.36" size="1.778" layer="96" align="center"/>
+<instance part="MP5" gate="G$1" x="-76.2" y="-86.36" smashed="yes">
+<attribute name="NAME" x="-76.2" y="-81.28" size="1.778" layer="95" align="center"/>
+<attribute name="VALUE" x="-76.2" y="-91.44" size="1.778" layer="96" align="center"/>
 </instance>
-<instance part="MP6" gate="G$1" x="-76.2" y="-63.5" smashed="yes">
-<attribute name="NAME" x="-76.2" y="-58.42" size="1.778" layer="95" align="center"/>
-<attribute name="VALUE" x="-76.2" y="-68.58" size="1.778" layer="96" align="center"/>
+<instance part="MP6" gate="G$1" x="-76.2" y="-68.58" smashed="yes">
+<attribute name="NAME" x="-76.2" y="-63.5" size="1.778" layer="95" align="center"/>
+<attribute name="VALUE" x="-76.2" y="-73.66" size="1.778" layer="96" align="center"/>
 </instance>
 <instance part="MP7" gate="G$1" x="-198.12" y="48.26" smashed="yes">
 <attribute name="NAME" x="-198.12" y="53.34" size="1.778" layer="95" align="center"/>
@@ -6529,19 +6529,19 @@ W = angled&lt;p&gt;
 </segment>
 <segment>
 <pinref part="AMPLIFIER" gate="A" pin="1"/>
-<wire x1="-165.1" y1="-73.66" x2="-142.24" y2="-73.66" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
-<wire x1="-142.24" y1="-73.66" x2="-142.24" y2="-78.74" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-165.1" y1="-78.74" x2="-142.24" y2="-78.74" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-142.24" y1="-78.74" x2="-142.24" y2="-83.82" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
 <pinref part="GND10" gate="1" pin="GND"/>
 </segment>
 <segment>
 <pinref part="AMPLIFIER" gate="A" pin="4"/>
-<wire x1="-165.1" y1="-66.04" x2="-124.46" y2="-66.04" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
-<wire x1="-124.46" y1="-66.04" x2="-124.46" y2="-78.74" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-165.1" y1="-71.12" x2="-124.46" y2="-71.12" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-124.46" y1="-71.12" x2="-124.46" y2="-83.82" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
 <pinref part="GND11" gate="1" pin="GND"/>
 </segment>
 <segment>
 <pinref part="C7" gate="G$1" pin="2"/>
-<wire x1="-111.76" y1="-76.2" x2="-111.76" y2="-78.74" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-111.76" y1="-81.28" x2="-111.76" y2="-83.82" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
 <pinref part="GND12" gate="1" pin="GND"/>
 </segment>
 <segment>
@@ -6654,8 +6654,8 @@ W = angled&lt;p&gt;
 </segment>
 <segment>
 <pinref part="R9" gate="G$1" pin="2"/>
-<wire x1="-96.52" y1="-63.5" x2="-91.44" y2="-63.5" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
-<label x="-91.44" y="-63.5" size="1.778" layer="95" xref="yes" grouprefs="AUD_OUT"/>
+<wire x1="-96.52" y1="-68.58" x2="-91.44" y2="-68.58" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<label x="-91.44" y="-68.58" size="1.778" layer="95" xref="yes" grouprefs="AUD_OUT"/>
 </segment>
 </net>
 <net name="A1" class="0">
@@ -6874,8 +6874,8 @@ W = angled&lt;p&gt;
 </segment>
 <segment>
 <pinref part="AMPLIFIER" gate="A" pin="3"/>
-<wire x1="-165.1" y1="-68.58" x2="-142.24" y2="-68.58" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
-<label x="-142.24" y="-68.58" size="1.778" layer="95" xref="yes" grouprefs="AUD_OUT"/>
+<wire x1="-165.1" y1="-73.66" x2="-142.24" y2="-73.66" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<label x="-142.24" y="-73.66" size="1.778" layer="95" xref="yes" grouprefs="AUD_OUT"/>
 </segment>
 </net>
 <net name="6/(HYPNOS_5VR-CTRL)" class="0">
@@ -6941,8 +6941,8 @@ W = angled&lt;p&gt;
 </segment>
 <segment>
 <pinref part="AMPLIFIER" gate="A" pin="2"/>
-<wire x1="-165.1" y1="-71.12" x2="-142.24" y2="-71.12" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
-<label x="-142.24" y="-71.12" size="1.778" layer="95" xref="yes" grouprefs="AUD_OUT"/>
+<wire x1="-165.1" y1="-76.2" x2="-142.24" y2="-76.2" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<label x="-142.24" y="-76.2" size="1.778" layer="95" xref="yes" grouprefs="AUD_OUT"/>
 </segment>
 <segment>
 <pinref part="BLE_FRIEND" gate="A" pin="9"/>
@@ -6974,12 +6974,12 @@ W = angled&lt;p&gt;
 <net name="N$14" class="0">
 <segment>
 <pinref part="C7" gate="G$1" pin="1"/>
-<wire x1="-111.76" y1="-68.58" x2="-111.76" y2="-63.5" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
-<wire x1="-111.76" y1="-63.5" x2="-106.68" y2="-63.5" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
-<wire x1="-111.76" y1="-63.5" x2="-165.1" y2="-63.5" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-111.76" y1="-73.66" x2="-111.76" y2="-68.58" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-111.76" y1="-68.58" x2="-106.68" y2="-68.58" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
+<wire x1="-111.76" y1="-68.58" x2="-165.1" y2="-68.58" width="0.1524" layer="91" grouprefs="AUD_OUT"/>
 <pinref part="AMPLIFIER" gate="A" pin="5"/>
 <pinref part="R9" gate="G$1" pin="1"/>
-<junction x="-111.76" y="-63.5" grouprefs="AUD_OUT"/>
+<junction x="-111.76" y="-68.58" grouprefs="AUD_OUT"/>
 </segment>
 </net>
 <net name="N$1" class="0">

@@ -5,7 +5,7 @@
 #include "SAMDTimerInterrupt.h"
 
 // Audio sampling settings:
-#define SAMPLE_FREQ 2048 // Sampling frequency of incoming audio, must be at least twice the target frequency
+#define SAMPLE_FREQ 4096 // Sampling frequency of incoming audio, must be at least twice the target frequency
 #define REC_TIME 8 // Number of seconds of audio to record when frequency test is positive
 #define FFT_WIN_SIZE 256 // Size of window used when performing fourier transform of incoming audio; must be a power of 2
 // The product of sampleFreq and recordTime must be an integer multiple of winSize.

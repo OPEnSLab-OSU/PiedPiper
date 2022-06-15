@@ -2,11 +2,16 @@
 #include <Arduino.h>
 #include <SD.h>
 #include <SPI.h>
+#include <Wire.h>
+#include <ArduCAM.h>
+#include "memorysaver.h"
 
 /****************************************************/
 
 // Audio sampling settings:
 #define SAMPLE_FREQ 2048 // Sampling frequency of incoming audio, must be at least twice the target frequency
+#define AUD_OUT_INTERP_RATIO 16
+#define AUD_OUT_TIME 8
 #define REC_TIME 8 // Number of seconds of audio to record when frequency test is positive
 #define FFT_WIN_SIZE 256 // Size of window used when performing fourier transform of incoming audio; must be a power of 2
 // The product of sampleFreq and recordTime must be an integer multiple of winSize.
@@ -23,15 +28,14 @@
 
 //Hardware settings & information:
 #define AUD_IN A3
-#define SD_CS 10 // Chip select for SD
+#define AUD_OUT A0
 
-//Camera
 #define HYPNOS_5VR 6
 #define HYPNOS_3VR 5
-#define CAM_IMG_PIN 9 // Imaging control pin
-#define IMG_INT 15000 // Miliseconds between detection photos [15000]
-#define IMG_TIME 600000 // Time after a detection to be taking photos [600000]
-#define CTRL_IMG_INT 900000 // Miliseconds between control photos [900000]
+
+#define SD_CS 11 // Chip select for SD
+#define CAM_CS 10
+#define AMP_SD 
 
 #define LOG_INT 3600000 // Miliseconds between status logs [3600000]
 #define PLAYBACK_INT 900000 // Milliseconds between playback [900000]
@@ -39,21 +43,36 @@
     // Volatile audio input buffer (LINEAR)
 volatile static short inputSampleBuffer[FFT_WIN_SIZE];
 volatile static int inputSampleBufferPtr = 0;
-static const int sampleDelayTime = 1000000 / SAMPLE_FREQ;
+static const int inputSampleDelayTime = 1000000 / SAMPLE_FREQ;
 
+volatile static short outputSampleBuffer[SAMPLE_FREQ * AUD_OUT_TIME];
+volatile static int outputSampleBufferPtr = 0;
+volatile static int outputSampleInterpCount = 0;
+static const int outputSampleDelayTime = 1000000 / (SAMPLE_FREQ * AUD_OUT_INTERP_RATIO);
+
+
+//SD card directory structure:
+//Root
+  //Playback audio
+    //FTH.wav
+    //MTH.wav
+  //Field Data
+    //
+  //Deployment/metadata
+    //Configuration.txt (id, current deployment #)
+    
 class piedPiper {
   private:
     arduinoFFT FFT = arduinoFFT();  //object for FFT in frequency calcuation
+    ArduCAM Camera( OV2640, CAM_CS );
     File data;
     
     // This must be an integer multiple of the window size:
     static const int sampleCount = REC_TIME * SAMPLE_FREQ + FFT_WIN_SIZE * TIME_AVG_WIN_COUNT; // [Number of samples required to comprise small + large frequency arrays]
     static const int freqWinCount = REC_TIME * SAMPLE_FREQ / FFT_WIN_SIZE;
-    
+    static const int playbackSampleCount = SAMPLE_FREQ * AUD_OUT_TIME;
 
     // Samples array (CIRCULAR)
-    // (Should I break this into time windows that directly correspond to the frequency array windows?)
-    // (This would complicate things slightly, but it would let me know the frequency array positions just from the sample window position
     short samples[sampleCount];
     int samplePtr = 0;
 
@@ -81,24 +100,27 @@ class piedPiper {
 
     void StopAudioStream();
     void RestartAudioStream();
-
     
     void SmoothFreqs(int winSize);
     bool CheckFreqDomain(int t);
     
     void ResetSPI();
 
-    void(*timerStart)();
-    void(*timerStop)();
+    void(*inputISRStartFxn)();
+    void(*inputISRStopFxn)();
+
+    void(*outputISRStartFxn)();
+    void(*outputISRStopFxn)();
 
   public:
-    piedPiper(void(*tStart)(), void(*tStop)());
+    piedPiper(void(*audInStart)(), void(*audInStop)(), void(*audOutStart)(), void(*audOutStop)());
 
     static void RecordSample();
     bool InputSampleBufferFull();
     void ProcessData();
     bool InsectDetection();
     void Playback();
+    void LoadSound();
     void LogAlive();
     void TakePhoto(int n);
     void SaveDetection();
@@ -109,5 +131,4 @@ class piedPiper {
     unsigned long GetLastDetectionTime();
     unsigned long GetLastLogTime();
     int GetDetectionNum();
-    
 };

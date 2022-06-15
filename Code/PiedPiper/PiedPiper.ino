@@ -49,7 +49,7 @@ void setup() {
 
   p.Playback();
 
-  ITimer0.attachInterruptInterval(sampleDelayTime, p.RecordSample);
+  ITimer0.attachInterruptInterval(inputSampleDelayTime, p.RecordSample);
 }
 
 void loop() {

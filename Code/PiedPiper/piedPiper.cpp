@@ -1,23 +1,40 @@
 #include "piedPiper.h"
 
 // Class initialization
-piedPiper::piedPiper(void(*tStart)(), void(*tStop)()) {
-  timerStart = tStart;
-  timerStop = tStop;
+piedPiper::piedPiper(void(*audInStart)(), void(*audInStop)(), void(*audOutStart)(), void(*audOutStop)()) {
+  inputISRStartFxn = audInStart;
+  inputISRStopFxn = audInStop;
+
+  outputISRStartFxn = audOutStart;
+  outputISRStopFxn = audOutStop;
 }
 
 // Used to stop the interrupt timer for sample recording, so that it does not interfere with SD and Serial communication
-void piedPiper::StopAudioStream()
+void piedPiper::StopAudioInputISR()
 {
-  (*timerStop)();
+  (*inputISRStopFxn)();
   Serial.println("Audio stream stopped");
 }
 
 // Used to restart the sample recording timer once SPI and Serial communications have completed.
-void piedPiper::RestartAudioStream()
+void piedPiper::RestartAudioInputISR()
 {
   Serial.println("Restarting audio stream");
-  (*timerStart)();
+  (*inputISRStartFxn)();
+}
+
+// Used to stop the interrupt timer for sample recording, so that it does not interfere with SD and Serial communication
+void piedPiper::StopAudioOutputISR()
+{
+  (*outputISRStopFxn)();
+  Serial.println("Audio stream stopped");
+}
+
+// Used to restart the sample recording timer once SPI and Serial communications have completed.
+void piedPiper::RestartAudioOutputISR()
+{
+  Serial.println("Restarting audio stream");
+  (*outputISRStartFxn)();
 }
 
 // This records new audio samples into the sample buffer asyncronously using a hardware timer.
@@ -30,6 +47,15 @@ void piedPiper::RecordSample(void)
   {
     inputSampleBuffer[inputSampleBufferPtr] = analogRead(AUD_IN);
     inputSampleBufferPtr++;
+  }
+}
+
+void piedPiper::OutputSample(void)
+{
+  if (outputSampleBufferPtr < playbackSampleCount)
+  {
+    analogWrite(AUD_OUT, outputSampleBuffer[outputSampleBufferPtr]);
+    outputSampleBufferPtr++;
   }
 }
 
@@ -175,7 +201,7 @@ bool piedPiper::CheckFreqDomain(int t)
 void piedPiper::SaveDetection()
 {
   delay(1000);
-  StopAudioStream();
+  StopAudioInputISR();
   lastDetectionTime = millis();
   
   ResetSPI();
@@ -238,13 +264,13 @@ void piedPiper::SaveDetection()
 
   rawFreqsPtr = 0;
 
-  RestartAudioStream();
+  RestartAudioInputISR();
 }
 
 // Takes a single photo, and records what time and detection it corresponds to
 void piedPiper::TakePhoto(int n)
 {
-  StopAudioStream();
+  StopAudioInputISR();
   lastImgTime = millis();
   ResetSPI();
   
@@ -286,28 +312,39 @@ void piedPiper::TakePhoto(int n)
   data.close();
   SD.end();
   digitalWrite(HYPNOS_3VR, HIGH);
-  RestartAudioStream();
+  RestartAudioInputISR();
 }
 
 // Plays back a female mating call using the vibration exciter
 void piedPiper::Playback()
 {
-  StopAudioStream();
-  Serial1.begin(9600);
+  StopAudioInputISR();
+
   digitalWrite(HYPNOS_5VR, HIGH);
-  delay(500);
-  Serial1.println("#00");
-  delay(6300);
+  analogWrite(AUD_OUT, 512);
+  digitalWrite(AMP_SD, HIGH);
+
+  RestartAudioOutputISR();
+
+  while (outputSampleBufferPtr < playbackSampleCount)
+  {}
+  
+  StopAudioOutputISR();
+
+  outputSampleBufferPtr = 0;
+  outputSampleInterpCount = 0;
+
   digitalWrite(HYPNOS_5VR, LOW);
-  Serial1.end();
-  lastPlaybackTime = millis();
-  RestartAudioStream();
+  analogWrite(AUD_OUT, 0);
+  digitalWrite(AMP_SD, LOW);
+  
+  RestartAudioInputISR();
 }
 
 // Records the most recent time that the unit is alive.
 void piedPiper::LogAlive()
 {
-  StopAudioStream();
+  StopAudioInputISR();
   lastLogTime = millis();
   ResetSPI();
   digitalWrite(HYPNOS_3VR, LOW);
@@ -332,7 +369,7 @@ void piedPiper::LogAlive()
   
   SD.end();
   digitalWrite(HYPNOS_3VR, HIGH);
-  RestartAudioStream();
+  RestartAudioInputISR();
 }
 
 //+

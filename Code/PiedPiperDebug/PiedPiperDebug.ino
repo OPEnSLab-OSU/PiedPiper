@@ -36,9 +36,7 @@ void setup() {
 
   digitalWrite(HYPNOS_3VR, LOW);
 
-  Serial.println("Testing SD...");
-
-  delay(1000);
+  //Serial.println("Testing SD...");
 
   if (!SD.begin(SD_CS))
   {
@@ -46,9 +44,12 @@ void setup() {
     initializationFailFlash();
   }
 
+  Wire.begin();
+  SPI.begin();
+
   if ((SD.exists("/PBAUD/FPBX.PAD") && SD.exists("/DATA/DETS/DETS.txt") && SD.exists("/DATA/PHOTO/PHOTO.txt")))
   {
-    Serial.println("SD card has correct directory structure. Setting photo and detection numbers...");
+    //Serial.println("SD card has correct directory structure. Setting photo and detection numbers...");
 
     // Set current photo number
     int pn = 1;
@@ -111,11 +112,6 @@ void setup() {
     initializationFailFlash();
   }
 
-  SD.end();
-
-  Wire.begin();
-  //Wire.setClock(100000);
-
   Serial.println("Initializing RTC...");
 
   if (!p.rtc.begin())
@@ -132,15 +128,19 @@ void setup() {
 
   digitalWrite(HYPNOS_3VR, HIGH);
 
-
-  //SPI.end();
-  Wire.end();
+  SD.end();
 
   ITimer0.attachInterruptInterval(inputSampleDelayTime, p.RecordSample);
 
-  p.LoadSound("FPBX.PAD");
-  p.Playback();
+  Serial.println("Nominal state (3VR and 5VR off, audio input enabled) established.");
 
+  p.LoadSound("FPBX.PAD");
+
+  /*/
+  p.Playback();
+/*/
+
+/*/
   for (int i = 0; i < 3; i++)
   {
     if (!p.TakePhoto(0))
@@ -153,76 +153,68 @@ void setup() {
       Serial.println("Successfully took test photo.");
     }
   }
+  /*/
 
-  Serial.println("Send any character to skip the 30 minute delay.");
-  long ct = millis();
-  while (millis() - ct < BEGIN_LOG_WAIT_TIME)
-  {
-    if (Serial.available())
-    {
-      while (Serial.available())
-      {
-        Serial.read();
-      }
-
-      break;
-    }
-    delay(1000);
-  }
+  Serial.println("Main loop begin");
+  Serial.println("d - Test detection algorithm\np - Take photo\ns - Perform playback");
 }
+
+bool enableDetectionAlg = false;
 
 void loop() {
   lastTime = currentTime;
   currentTime = millis();
 
-  if (currentTime < lastTime)
+  while (Serial.available())
   {
-    p.ResetOperationIntervals();
-  }
+    char ch = Serial.read();
 
-  if (p.InputSampleBufferFull())
-  {
-    p.ProcessData();
+    // Photo, playback, detection algorithm
 
-    if (p.InsectDetection())
+    if (ch == 'd')
     {
-      while (millis() - currentTime < SAVE_DETECTION_DELAY_TIME)
+      if (enableDetectionAlg)
       {
-        if (p.InputSampleBufferFull())
-        {
-          p.ProcessData();
-        }
+        Serial.println("Disabling detection algorithm");
+        enableDetectionAlg = false;
       }
+      else
+      {
+        Serial.println("Enabling detection algorithm");
+        enableDetectionAlg = true;
+      }
+    }
 
-      p.SaveDetection();
+    else if (ch == 's')
+    {
+      Serial.println("Performing playback");
       p.Playback();
-      p.TakePhoto(p.GetDetectionNum());
-    }
-  }
-  else
-  {
-    //Intermittent playback
-    if (currentTime - p.GetLastPlaybackTime() > PLAYBACK_INT)
-    {
-      p.Playback();
     }
 
-    // Detection photos
-    if ((currentTime - p.GetLastDetectionTime() < IMG_TIME) && (currentTime - p.GetLastPhotoTime() > IMG_INT))
+    else if (ch == 'p')
     {
-      p.TakePhoto(p.GetDetectionNum());
-    }
-
-    // Control photos
-    else if (currentTime - p.GetLastPhotoTime() > CTRL_IMG_INT)
-    {
+      Serial.println("Taking photo");
       p.TakePhoto(0);
     }
 
-    // Aliveness logging
-    if (currentTime - p.GetLastLogTime() > LOG_INT)
+    else if (ch == 'm')
     {
-      p.LogAlive();
+      Serial.print("Memory remaining: ");
+
+      Serial.println(FreeRAM());
+    }
+  }
+
+  if (enableDetectionAlg)
+  {
+    if (p.InputSampleBufferFull())
+    {
+      p.ProcessData();
+
+      if (p.InsectDetection())
+      {
+        Serial.println("Positive detection");
+      }
     }
   }
 }
@@ -236,4 +228,11 @@ void initializationFailFlash()
     digitalWrite(HYPNOS_3VR, HIGH);
     delay(500);
   };
+}
+
+extern "C" char *sbrk(int i);
+
+int FreeRAM () {
+  char stack_dummy = 0;
+  return &stack_dummy - sbrk(0);
 }

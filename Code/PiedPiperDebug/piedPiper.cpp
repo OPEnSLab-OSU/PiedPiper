@@ -40,10 +40,6 @@ void piedPiper::RecordSample(void)
   }
 }
 
-// Function called by the interrupt timer to output an audio sample.
-// It used cubic interpolation to increase the output sampling frequency to a high enough rate
-// to eliminate high-frequency noise that would otherwise make it through the single-stage
-// analog filter at the input of the amplifier driving the vibration exciter.
 void piedPiper::OutputSample(void) {
   analogWrite(AUD_OUT, nextOutputSample);
 
@@ -74,9 +70,6 @@ bool piedPiper::InputSampleBufferFull()
   return !(inputSampleBufferPtr < FFT_WIN_SIZE);
 }
 
-// Loads sound data from the SD card into the audio output buffer. Once loaded, the data will
-// remain in-place until LoadSound is called again. This means that all future calls to 
-// Playback will play back the same audio data.
 bool piedPiper::LoadSound(char* fname) {
   StopAudio();
   ResetSPI();
@@ -179,7 +172,7 @@ void piedPiper::ProcessData()
   for (int t = 0; t < TIME_AVG_WIN_COUNT; t++)
   {
     for (int f = 0; f < FFT_WIN_SIZE / 2; f++) {
-      vReal[f] += rawFreqs[t][f] / (1.0 * TIME_AVG_WIN_COUNT);
+      vReal[f] += rawFreqs[t][f] / TIME_AVG_WIN_COUNT;
     }
   }
 
@@ -194,13 +187,13 @@ void piedPiper::ProcessData()
 
   for (int f = 0; f < FFT_WIN_SIZE / 2; f++)
   {
-    freqs[freqsPtr][f] = freqs[freqsPtr][f] - round(vReal[f]);
+    freqs[freqsPtr][f] = freqs[freqsPtr][f] - round(NOISE_FLOOR_MULT * vReal[f]);
   }
 
   freqsPtr = IterateCircularBufferPtr(freqsPtr, freqWinCount);
 }
 
-// Performs rectangular smoothing on frequency data stored in [vReal].
+// Performs rectangular smoothing on frequency data stored in [vReal]
 void piedPiper::SmoothFreqs(int winSize)
 {
   float inptDup[FFT_WIN_SIZE / 2];
@@ -333,7 +326,7 @@ void piedPiper::SaveDetection()
 
   samplePtr = 0;
 
-  // Creates second detection data file that stores the processed frequency data responsible for the detection. ==================================================================================================================
+  // DELETE ME LATER ==================================================================================================================
 
   data.close();
 
@@ -413,6 +406,10 @@ bool piedPiper::TakePhoto(int n)
 
   SPI.begin();
   Wire.begin();
+  //Wire.setClock(100000);
+  //SPI.setClockDivider(32);
+  //SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE1));
+
 
   delay(20);
 
@@ -467,6 +464,8 @@ bool piedPiper::TakePhoto(int n)
   // Reduce SPI clock speed for stability =======================================
 
   delay(10);
+
+  //Serial.println(F("SD Card detected.\n"));
 
   // COnfigure camera module ==================================================
   CameraModule.set_format(JPEG);

@@ -1,4 +1,4 @@
-#include <arduinoFFTFloat.h>
+#include <arduinoFFT.h>
 #include <Arduino.h>
 #include <SD.h>
 #include <SPI.h>
@@ -15,19 +15,16 @@
 #define AUD_OUT_INTERP_RATIO 8
 #define AUD_OUT_TIME 8
 #define REC_TIME 8 // Number of seconds of audio to record when frequency test is positive
-#define FFT_WIN_SIZE 256 // Size of window used when performing fourier transform of incoming audio; must be a power of 2
+#define FFT_WIN_SIZE 512 // Size of window used when performing fourier transform of incoming audio; must be a power of 2
 // The product of sampleFreq and recordTime must be an integer multiple of winSize.
 
-#define SD_OPEN_ATTEMPT_COUNT 10
-#define SD_OPEN_RETRY_DELAY_MS 10
-
 // Detection algorithm settings:
-#define TGT_FREQ 175 // Primary (first harmonic) frequency of mating call to search for
-#define FREQ_MARGIN 25 // Margin for error of target frequency
+#define TGT_FREQ 80 // Primary (first harmonic) frequency of mating call to search for
+#define FREQ_MARGIN 16 // Margin for error of target frequency
 #define HARMONICS 1 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
-#define SIG_THRESH 480 // Threshhold for magnitude of target frequency peak to be considered a positive detection
+#define SIG_THRESH 1000 // Threshhold for magnitude of target frequency peak to be considered a positive detection
 #define EXP_SIGNAL_LEN 5 // Expected length of the mating call
-#define EXP_DET_EFF 0.75 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
+#define EXP_DET_EFF 1.0 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
 #define NOISE_FLOOR_MULT 1.0 // uh
 #define TIME_AVG_WIN_COUNT 8 // Number of frequency windows used to average frequencies across time
 
@@ -52,7 +49,7 @@
 #define IMG_TIME 300000
 #define IMG_INT 30000
 
-#define BEGIN_LOG_WAIT_TIME 3600000 //3600000
+#define BEGIN_LOG_WAIT_TIME 60000 //3600000
 
 #define SAVE_DETECTION_DELAY_TIME 2000
 

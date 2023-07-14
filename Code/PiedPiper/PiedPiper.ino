@@ -137,7 +137,6 @@ void setup() {
   Wire.end();
 
   ITimer0.attachInterruptInterval(inputSampleDelayTime, p.RecordSample);
-
   p.LoadSound("FPBX.PAD");
   p.Playback();
 
@@ -186,6 +185,7 @@ void loop() {
 
     if (p.InsectDetection())
     {
+      Serial.println("Detection occured!");
       while (millis() - currentTime < SAVE_DETECTION_DELAY_TIME)
       {
         if (p.InputSampleBufferFull())
@@ -193,6 +193,7 @@ void loop() {
           p.ProcessData();
         }
       }
+
 
       p.SaveDetection();
       p.Playback();

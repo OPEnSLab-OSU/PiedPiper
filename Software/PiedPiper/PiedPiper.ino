@@ -1,5 +1,5 @@
 #include "piedPiper.h"
-#include "SAMDTimerInterrupt.h"
+#include "SAMDTimerInterrupt.h" // Version 1.10.1, pulled on August 18, 2023
 
 // Timer object for managing ISR's for audio recording and playback
 SAMDTimer ITimer0(TIMER_TC3);
@@ -20,6 +20,8 @@ void startISRTimer(const unsigned long interval_us, void(*fnPtr)())
 piedPiper p(startISRTimer, stopISRTimer);
 unsigned long currentTime = 0;
 unsigned long lastTime = 0;
+
+char playback_filename[9] = "BMSB.PAD";
 
 void setup() {
   // Begin serial communication and configure the analog read and write resolutions to their maximum possible values.
@@ -53,8 +55,11 @@ void setup() {
     initializationFailFlash();
   }
 
+  char playback_sound_dir[20];
+  sprintf(playback_sound_dir, "/PBAUD/%s", playback_filename);
+  Serial.printf("Playback filename: %s\n", playback_filename);
   // Verify that the SD card has all the required files and the correct directory structure.
-  if ((SD.exists("/PBAUD/FPBX.PAD") && SD.exists("/DATA/DETS/DETS.txt") && SD.exists("/DATA/PHOTO/PHOTO.txt")))
+  if ((SD.exists(playback_sound_dir) && SD.exists("/DATA/DETS/DETS.txt") && SD.exists("/DATA/PHOTO/PHOTO.txt")))
   {
     Serial.println("SD card has correct directory structure. Setting photo and detection numbers...");
 
@@ -150,29 +155,36 @@ void setup() {
   Wire.end();
 
   // Enable audio sampling
-  ITimer0.attachInterruptInterval(inputSampleDelayTime, p.RecordSample);
+  if (USE_DETECTION) { ITimer0.attachInterruptInterval(inputSampleDelayTime, p.RecordSample); }
+  else { Serial.println("AUDIO SAMPLING DISABLED"); }
 
   // Load the prerecorded mating call to play back
-  p.LoadSound("FPBX.PAD");
+  p.LoadSound(playback_filename);
   p.Playback();
 
   // Test the camera module by taking 3 test images
-  for (int i = 0; i < 3; i++)
-  {
-    if (!p.TakePhoto(0))
+  if (USE_CAMERA_MODULE) {
+    for (int i = 0; i < 3; i++)
     {
-      // Stop the program if the camera module failed to take an image
-      Serial.println("Camera module failure!");
-      //initializationFailFlash();
+      if (!p.TakePhoto(0))
+      {
+        // Stop the program if the camera module failed to take an image
+        Serial.println("Camera module failure!");
+        //initializationFailFlash();
+      }
+      else
+      {
+        Serial.println("Successfully took test photo.");
+      }
     }
-    else
-    {
-      Serial.println("Successfully took test photo.");
-    }
-  }
+  } else { Serial.println("CAMERA MODULE DISABLED"); }
 
-  // Wait here for 30 minutes (or until the user sends a character over)
-  Serial.println("Send any character to skip the 30 minute delay.");
+  // Wait here for BEGIN_LOG_WAIT_TIME milliseconds (or until the user sends a character over)
+  if (BEGIN_LOG_WAIT_TIME >= 60000) {
+    Serial.printf("Send any character to skip the %d minute delay.\n", int(BEGIN_LOG_WAIT_TIME / 60000));
+  } else { 
+    Serial.printf("Send any character to skip the %d second delay.\n", int(BEGIN_LOG_WAIT_TIME / 1000));
+  }
   long ct = millis();
   while (millis() - ct < BEGIN_LOG_WAIT_TIME)
   {
@@ -203,12 +215,14 @@ void loop() {
   // Check if the input sample buffer is full
   if (p.InputSampleBufferFull())
   {
+    // Serial.println("buffer filled");
     // Move the data out of the buffer, reset the volatile sample pointer, and process the audio samples.
     p.ProcessData();
 
     // Check if the newly recorded audio contains a mating call
     if (p.InsectDetection())
     {
+      // Serial.println("detection occured");
       // Continue recording audio for SAVE_DETECTION_DELAY_TIME milliseconds before taking photos and performing playback,
       // to make sure that all (or at least most) of the mating call is captured.
       

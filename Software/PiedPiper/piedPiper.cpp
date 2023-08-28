@@ -9,7 +9,9 @@ piedPiper::piedPiper(void(*audStart)(const unsigned long interval_us, void(*fnPt
 // Used to stop the interrupt timer for sample recording, so that it does not interfere with SD and Serial communication
 void piedPiper::StopAudio()
 {
-  (*ISRStopFn)();
+  if (outputSampleBufferPtr == (playbackSampleCount - 2)) {
+    (*ISRStopFn)();
+  }
   //Serial.println("Audio stream stopped");
 }
 
@@ -24,7 +26,7 @@ void piedPiper::StartAudioOutput()
 void piedPiper::StartAudioInput()
 {
   //Serial.println("Restarting audio stream");
-  (*ISRStartFn)(inputSampleDelayTime, RecordSample);
+  if (USE_DETECTION) { (*ISRStartFn)(inputSampleDelayTime, RecordSample); }
 }
 
 // This records new audio samples into the sample buffer asyncronously using a hardware timer.
@@ -393,6 +395,8 @@ void piedPiper::SaveDetection()
 // Takes a single photo, and records what time and detection it corresponds to
 bool piedPiper::TakePhoto(int n)
 {
+  if (USE_CAMERA_MODULE == 0) { return true; }
+  
   StopAudio();
 
 
@@ -566,6 +570,7 @@ bool piedPiper::TakePhoto(int n)
 
   StartAudioInput();
   return true;
+  
 }
 
 uint8_t piedPiper::read_fifo_burst(ArduCAM CameraModule)

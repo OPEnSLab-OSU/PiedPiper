@@ -154,6 +154,9 @@ void setup() {
 
   Wire.end();
 
+  p.calculateDownsamplSincFilterTable();
+  p.calculateUpsampleSincFilterTable();
+
   // Enable audio sampling
   if (USE_DETECTION) { ITimer0.attachInterruptInterval(inputSampleDelayTime, p.RecordSample); }
   else { Serial.println("AUDIO SAMPLING DISABLED"); }
@@ -222,7 +225,7 @@ void loop() {
     // Check if the newly recorded audio contains a mating call
     if (p.InsectDetection())
     {
-      // Serial.println("detection occured");
+      Serial.println("detection occured");
       // Continue recording audio for SAVE_DETECTION_DELAY_TIME milliseconds before taking photos and performing playback,
       // to make sure that all (or at least most) of the mating call is captured.
       

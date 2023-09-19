@@ -154,15 +154,16 @@ bool piedPiper::LoadSound(char* fname) {
 void piedPiper::ProcessData()
 {
   //Quickly pull data from volatile buffer into sample buffer, iterating pointer as needed.
-  for (int i = 0; i < FFT_WIN_SIZE; i++)
+  for (int i = 0; i < WIN_SIZE; i++)
   {
     samples[samplePtr] = inputSampleBuffer[i];
-    vReal[i] = inputSampleBuffer[i];
-    vImag[i] = 0.0;
+    inputSampleBufferCpy[i] = float(inputSampleBuffer[i]);
     samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
   }
 
   inputSampleBufferPtr = 0;
+
+  sincFilterDownsample(inputSampleBufferCpy, WIN_SIZE, vReal);
 
   //Calculate FFT of new data and put into time smoothing buffer
   FFT.DCRemoval(vReal, FFT_WIN_SIZE); // Remove DC component of signal
@@ -232,6 +233,156 @@ void piedPiper::SmoothFreqs(int winSize)
   }
 }
 
+
+// calculates sinc filter table for downsampling a signal by @ratio
+// @nz is the number of zeroes to use for the table
+void piedPiper::calculateDownsamplSincFilterTable() {
+  int ratio = AUD_IN_DOWNSAMPLE_RATIO;
+  int nz = AUD_IN_DOWNSAMPLE_FILTER_SIZE;
+  // Build sinc function table for downsampling by @AUD_IN_DOWNSAMPLE_RATIO
+  int n = (2 * nz + 1) * ratio - ratio + 1;
+
+  float ns[n];
+  float ns_step = float(nz * ratio * 2) / (n - 1);
+
+  float t[n];
+  float t_step = 1.0 / (n - 1);
+
+  for (int i = 0; i < n; i++) {
+    ns[i] = float(-1.0 * nz * ratio) + ns_step * i;
+    t[i] = t_step * i;
+  }
+
+  sincFilterTableDownsample = new float[n];
+  for (int i = 0; i < n; i++) {
+    sincFilterTableDownsample[i] = (1.0 / ratio) * sin(PI * ns[i] / ratio) / (PI * ns[i] / ratio);
+  }
+  sincFilterTableDownsample[int(round((n - 1) / 2.0))] = 1.0 / ratio;
+  for (int i = 0; i < n; i++) {
+    sincFilterTableDownsample[i] = sincFilterTableDownsample[i] * 0.5 * (1.0 - cos(2.0 * PI * t[i]));
+  }
+}
+
+// downsampling @input pointer based on sinc filter and stores processed data to @output pointer
+// @output array size must be at least (@input_len / @ratio size)
+void piedPiper::sincFilterDownsample(float *input, int input_len, float *output) {
+  int ratio = AUD_IN_DOWNSAMPLE_RATIO;
+  int nz = AUD_IN_DOWNSAMPLE_FILTER_SIZE;
+  int output_len = floor(input_len / ratio);
+
+  int n = (2 * nz + 1) * ratio - ratio + 1;
+
+  // pad ends of input array
+  int padding_start = (nz * ratio - 1);
+  int padding_end = (nz * ratio + 1);
+
+  int padded_input_len = padding_start + input_len + padding_end;
+  float padded_input[padded_input_len];
+
+  float padding_s = input[0];
+  float padding_e = input[input_len - 1];
+
+  for (int i = 0; i < padded_input_len; i++) {
+    if (i < padding_start) {
+      padded_input[i] = padding_s;
+    } else if (i < padded_input_len - padding_end) {
+      padded_input[i] = input[i - padding_start];
+    } else {
+      padded_input[i] = padding_e;
+    }
+  }
+
+  // Determine value of each sample in the output array
+  for (int i = 0; i < output_len; i++) {
+    vImag[i] = 0.0;
+    output[i] = 0.0;
+    // loop over each point in window, centered around the current sample
+    for (int k = 0; k < n; k++) {
+      // determine the current index in the input signal
+      int idx = round(nz * ratio + i * ratio - ((n - 1) * 0.5) + k);
+      // multiply the input signle by the current position in the sinc function and add it to the output array to compute the convolution
+      output[i] += padded_input[idx] * sincFilterTableDownsample[k];
+    }
+  }
+}
+
+// calculates sinc filter table for upsampling a signal by @ratio
+// @nz is the number of zeroes to use for the table
+void piedPiper::calculateUpsampleSincFilterTable() {
+  int ratio = AUD_OUT_UPSAMPLE_RATIO;
+  int nz = AUD_OUT_UPSAMPLE_FILTER_SIZE;
+  // Build sinc function table for upsampling by @upsample_ratio
+  int n = (2 * nz + 1) * ratio - ratio + 1;
+
+  float ns[n];
+  float ns_step = float(nz * 2) / (n - 1);
+
+  float t[n];
+  float t_step = 1.0 / (n - 1);
+
+  for (int i = 0; i < n; i++) {
+    ns[i] = float(-1.0 * nz) + ns_step * i;
+    t[i] = t_step * i;
+  }
+
+  sincFilterTableUpsample = new float[n];
+  for (int i = 0; i < n; i++) {
+    sincFilterTableUpsample[i] = sin(PI * ns[i]) / (PI * ns[i]); 
+  }
+  sincFilterTableUpsample[int(round((n - 1) / 2.0))] = 1.0;
+  for (int i = 0; i < n; i++) {
+    sincFilterTableUpsample[i] = sincFilterTableUpsample[i] * 0.5 * (1.0 - cos(2.0 * PI * t[i]));
+  }
+}
+
+// upsampling @input pointer based on sinc filter and stores processed data to @output pointer
+// @output array size must be at least (@input_len / @ratio size)
+void piedPiper::sincFilterUpsample(float *input, int input_len, float *output) {
+  int ratio = AUD_OUT_UPSAMPLE_RATIO;
+  int nz = AUD_OUT_UPSAMPLE_FILTER_SIZE;
+  int output_len = input_len * ratio;
+
+  int n = (2 * nz + 1) * ratio - ratio + 1;
+
+  // pad ends of input array
+  int padding_start = nz;
+  int padding_end = nz + 1;
+
+  int padded_input_len = padding_start + input_len + padding_end;
+  float padded_input[padded_input_len];
+
+  float padding_s = input[0];
+  float padding_e = input[input_len - 1];
+
+  for (int i = 0; i < padded_input_len; i++) {
+    if (i < padding_start) {
+      padded_input[i] = padding_s;
+    } else if (i < padded_input_len - padding_end) {
+      padded_input[i] = input[i - padding_start];
+    } else {
+      padded_input[i] = padding_e;
+    }
+  }
+
+  float min_k = 1.0 / (2 * ratio);
+  // Determine value of each sample in the output array
+  for (int i = 0; i < output_len; i++) {
+    output[i] = 0.0;
+    // loop over each point in window, centered around the current sample
+    for (int k = 0; k < n; k++) {
+      // determine the current index in the input signal
+      int idx = nz + float(i / ratio) - ((n - 1) / 2.0) / ratio + k / ratio;
+
+      // if landing on integer value:
+      if (abs(idx - round(idx)) < min_k) {
+        idx = round(idx);
+        // multiply the input signal by the current position in the sinc function and add it to the output array to compute the convolution
+        output[i] += padded_input[idx] * sincFilterTableUpsample[k];
+      }
+    }
+  }
+}
+
 // This tests the cold frequency array for the conditions required for a positive detection.
 // A positive detection is made when at least [THRESHHOLD] frequency peaks of [THRESHHOLD] magnitudes are found in the target frequency harmonics.
 bool piedPiper::InsectDetection()
@@ -255,8 +406,8 @@ bool piedPiper::InsectDetection()
 // Determines if there is a peak in the target frequency range at a specific time window (including harmonics).
 bool piedPiper::CheckFreqDomain(int t)
 {
-  int lowerIdx = floor(((TGT_FREQ - FREQ_MARGIN) * 1.0) / AUD_IN_SAMPLE_FREQ * FFT_WIN_SIZE);
-  int upperIdx = ceil(((TGT_FREQ + FREQ_MARGIN) * 1.0) / AUD_IN_SAMPLE_FREQ * FFT_WIN_SIZE);
+  int lowerIdx = floor(((TGT_FREQ - FREQ_MARGIN) * 1.0) / FFT_SAMPLE_FREQ * FFT_WIN_SIZE);
+  int upperIdx = ceil(((TGT_FREQ + FREQ_MARGIN) * 1.0) / FFT_SAMPLE_FREQ * FFT_WIN_SIZE);
 
   int count = 0;
 

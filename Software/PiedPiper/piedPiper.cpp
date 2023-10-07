@@ -9,17 +9,24 @@ piedPiper::piedPiper(void(*audStart)(const unsigned long interval_us, void(*fnPt
 // Used to stop the interrupt timer for sample recording, so that it does not interfere with SD and Serial communication
 void piedPiper::StopAudio()
 {
-  if (outputSampleBufferPtr == (playbackSampleCount - 2)) {
+  if (outputSampleBufferPtr == playbackSampleCount) {
     (*ISRStopFn)();
   }
-  //Serial.println("Audio stream stopped");
+  // if (outputSampleBufferPtr == playbackSampleCount - 2) {
+  //   (*ISRStopFn)();
+  // }
+  Serial.println("Audio stream stopped");
 }
 
 // Used to restart the sample recording timer once SPI and Serial communications have completed.
 void piedPiper::StartAudioOutput()
 {
-  //Serial.println("Restarting audio stream");
-  (*ISRStartFn)(outputSampleDelayTime, OutputSample);
+  Serial.println("Restarting audio stream");
+  // long time = micros();
+  // OutputUpsampledSample();
+  // Serial.println(micros() - time);
+  (*ISRStartFn)(outputSampleDelayTime, OutputUpsampledSample);
+  //(*ISRStartFn)(outputSampleDelayTime, OutputUpsampledSample);
 }
 
 // Used to restart the sample recording timer once SPI and Serial communications have completed.
@@ -35,10 +42,27 @@ void piedPiper::StartAudioInput()
 // If it is not full, it records a sample and moves the pointer over.
 void piedPiper::RecordSample(void)
 {
-  if (inputSampleBufferPtr < FFT_WIN_SIZE)
+  if (inputSampleBufferPtr < WIN_SIZE)
   {
-    inputSampleBuffer[inputSampleBufferPtr] = analogRead(AUD_IN);
-    inputSampleBufferPtr++;
+    int sample = analogRead(AUD_IN);
+    inputSampleBuffer[inputSampleBufferPtr++] = sample;
+
+    downsampleInputPtrCpy = downsampleInputPtr;
+    downsampleInput[downsampleInputPtr++] = sample;
+    downsampleInputC++;
+    if (downsampleInputPtr == sincTableSizeD) { downsampleInputPtr = 0; }
+    if (downsampleInputC == AUD_IN_DOWNSAMPLE_RATIO) {
+      downsampleInputC = 0;
+      float downsampleSample = 0.0;
+      int currentSample = downsampleInputPtrCpy;
+      for (int i = 0; i < sincTableSizeD; i++) {
+        downsampleSample += downsampleInput[currentSample] * sincFilterTableDownsample[i];
+        currentSample += 1;
+        if (currentSample == sincTableSizeD) { currentSample = 0; }
+      }
+      downsampleOutput[downsampleOutputPtr++] = downsampleSample;
+      if (downsampleOutputPtr == FFT_WIN_SIZE) { downsampleOutputPtr = 0; }
+    }
   }
 }
 
@@ -68,6 +92,33 @@ void piedPiper::OutputSample(void) {
     nextOutputSample = max(0, min(4095, round(interpCoeffA * t * t * t + interpCoeffB * t * t + interpCoeffC * t + interpCoeffD)));
     pbs = true;
   }
+}
+
+void piedPiper::OutputUpsampledSample(void) {
+  analogWrite(AUD_OUT, nextOutputSample);
+
+  if (outputSampleBufferPtr == playbackSampleCount) { return; }
+
+  upsampleInputPtrCpy = upsampleInputPtr;
+  if (upsampleInputC == 0) {
+    upsampleInput[upsampleInputPtr] = outputSampleBuffer[outputSampleBufferPtr++];
+  } else {
+    upsampleInput[upsampleInputPtr] = 0;
+  }
+  upsampleInputC += 1;
+  upsampleInputPtr += 1;
+  if (upsampleInputC == AUD_OUT_UPSAMPLE_RATIO) { upsampleInputC = 0; }
+  if (upsampleInputPtr == sincTableSizeU) { upsampleInputPtr = 0; }
+
+  float upsampledSample = 0.0;
+  for (int i = 0; i < sincTableSizeU; i++) {
+    upsampledSample += upsampleInput[upsampleInputPtrCpy++] * sincFilterTableUpsample[i];
+    if (upsampleInputPtrCpy == sincTableSizeU) { upsampleInputPtrCpy = 0; }
+  }
+
+  nextOutputSample = max(0, min(4095, round(upsampledSample)));
+
+  pbs = true;
 }
 
 // Determines if the sample buffer is full, and is ready to have frequencies computed.
@@ -157,13 +208,14 @@ void piedPiper::ProcessData()
   for (int i = 0; i < WIN_SIZE; i++)
   {
     samples[samplePtr] = inputSampleBuffer[i];
-    inputSampleBufferCpy[i] = float(inputSampleBuffer[i]);
     samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
+    if (i < FFT_WIN_SIZE) {
+      vReal[i] = downsampleOutput[i];
+      vImag[i] = 0.0;
+    }
   }
 
   inputSampleBufferPtr = 0;
-
-  sincFilterDownsample(inputSampleBufferCpy, WIN_SIZE, vReal);
 
   //Calculate FFT of new data and put into time smoothing buffer
   FFT.DCRemoval(vReal, FFT_WIN_SIZE); // Remove DC component of signal
@@ -253,56 +305,12 @@ void piedPiper::calculateDownsamplSincFilterTable() {
     t[i] = t_step * i;
   }
 
-  sincFilterTableDownsample = new float[n];
   for (int i = 0; i < n; i++) {
     sincFilterTableDownsample[i] = (1.0 / ratio) * sin(PI * ns[i] / ratio) / (PI * ns[i] / ratio);
   }
   sincFilterTableDownsample[int(round((n - 1) / 2.0))] = 1.0 / ratio;
   for (int i = 0; i < n; i++) {
     sincFilterTableDownsample[i] = sincFilterTableDownsample[i] * 0.5 * (1.0 - cos(2.0 * PI * t[i]));
-  }
-}
-
-// downsampling @input pointer based on sinc filter and stores processed data to @output pointer
-// @output array size must be at least (@input_len / @ratio size)
-void piedPiper::sincFilterDownsample(float *input, int input_len, float *output) {
-  int ratio = AUD_IN_DOWNSAMPLE_RATIO;
-  int nz = AUD_IN_DOWNSAMPLE_FILTER_SIZE;
-  int output_len = floor(input_len / ratio);
-
-  int n = (2 * nz + 1) * ratio - ratio + 1;
-
-  // pad ends of input array
-  int padding_start = (nz * ratio - 1);
-  int padding_end = (nz * ratio + 1);
-
-  int padded_input_len = padding_start + input_len + padding_end;
-  float padded_input[padded_input_len];
-
-  float padding_s = input[0];
-  float padding_e = input[input_len - 1];
-
-  for (int i = 0; i < padded_input_len; i++) {
-    if (i < padding_start) {
-      padded_input[i] = padding_s;
-    } else if (i < padded_input_len - padding_end) {
-      padded_input[i] = input[i - padding_start];
-    } else {
-      padded_input[i] = padding_e;
-    }
-  }
-
-  // Determine value of each sample in the output array
-  for (int i = 0; i < output_len; i++) {
-    vImag[i] = 0.0;
-    output[i] = 0.0;
-    // loop over each point in window, centered around the current sample
-    for (int k = 0; k < n; k++) {
-      // determine the current index in the input signal
-      int idx = round(nz * ratio + i * ratio - ((n - 1) * 0.5) + k);
-      // multiply the input signle by the current position in the sinc function and add it to the output array to compute the convolution
-      output[i] += padded_input[idx] * sincFilterTableDownsample[k];
-    }
   }
 }
 
@@ -325,61 +333,12 @@ void piedPiper::calculateUpsampleSincFilterTable() {
     t[i] = t_step * i;
   }
 
-  sincFilterTableUpsample = new float[n];
   for (int i = 0; i < n; i++) {
     sincFilterTableUpsample[i] = sin(PI * ns[i]) / (PI * ns[i]); 
   }
   sincFilterTableUpsample[int(round((n - 1) / 2.0))] = 1.0;
   for (int i = 0; i < n; i++) {
     sincFilterTableUpsample[i] = sincFilterTableUpsample[i] * 0.5 * (1.0 - cos(2.0 * PI * t[i]));
-  }
-}
-
-// upsampling @input pointer based on sinc filter and stores processed data to @output pointer
-// @output array size must be at least (@input_len / @ratio size)
-void piedPiper::sincFilterUpsample(float *input, int input_len, float *output) {
-  int ratio = AUD_OUT_UPSAMPLE_RATIO;
-  int nz = AUD_OUT_UPSAMPLE_FILTER_SIZE;
-  int output_len = input_len * ratio;
-
-  int n = (2 * nz + 1) * ratio - ratio + 1;
-
-  // pad ends of input array
-  int padding_start = nz;
-  int padding_end = nz + 1;
-
-  int padded_input_len = padding_start + input_len + padding_end;
-  float padded_input[padded_input_len];
-
-  float padding_s = input[0];
-  float padding_e = input[input_len - 1];
-
-  for (int i = 0; i < padded_input_len; i++) {
-    if (i < padding_start) {
-      padded_input[i] = padding_s;
-    } else if (i < padded_input_len - padding_end) {
-      padded_input[i] = input[i - padding_start];
-    } else {
-      padded_input[i] = padding_e;
-    }
-  }
-
-  float min_k = 1.0 / (2 * ratio);
-  // Determine value of each sample in the output array
-  for (int i = 0; i < output_len; i++) {
-    output[i] = 0.0;
-    // loop over each point in window, centered around the current sample
-    for (int k = 0; k < n; k++) {
-      // determine the current index in the input signal
-      int idx = nz + float(i / ratio) - ((n - 1) / 2.0) / ratio + k / ratio;
-
-      // if landing on integer value:
-      if (abs(idx - round(idx)) < min_k) {
-        idx = round(idx);
-        // multiply the input signal by the current position in the sinc function and add it to the output array to compute the convolution
-        output[i] += padded_input[idx] * sincFilterTableUpsample[k];
-      }
-    }
   }
 }
 
@@ -843,17 +802,18 @@ void piedPiper::Playback() {
   digitalWrite(AMP_SD, HIGH);
   delay(100);
 
-  //Serial.println("Amplifier enabled. Beginning playback ISR...");
+  Serial.println("Amplifier enabled. Beginning playback ISR...");
 
   StartAudioOutput();
 
-  while (outputSampleBufferPtr < (playbackSampleCount - 2)) {}
+  //while (outputSampleBufferPtr < playbackSampleCount - 2) {}
+  while (outputSampleBufferPtr < playbackSampleCount) {}
 
   StopAudio();
 
   //Serial.println("Finished playback ISR.\nShutting down amplifier...");
 
-  outputSampleBufferPtr = 2;
+  outputSampleBufferPtr = 0;
   outputSampleInterpCount = 0;
 
   digitalWrite(AMP_SD, LOW);

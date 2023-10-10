@@ -225,7 +225,7 @@ void loop() {
     // Check if the newly recorded audio contains a mating call
     if (p.InsectDetection())
     {
-      Serial.println("detection occured");
+      //Serial.println("detection occured");
       // Continue recording audio for SAVE_DETECTION_DELAY_TIME milliseconds before taking photos and performing playback,
       // to make sure that all (or at least most) of the mating call is captured.
       

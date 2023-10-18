@@ -2,18 +2,61 @@ import pathlib
 import os
 import sys
 import matplotlib.pyplot as plt
+import numpy as np
 
 def plotData(path):
     file = open(path, 'r')
-    allLines = []
+    samples = []
+    lines = file.readlines()
+    for line in lines:
+        line = line.replace("\n", "")
+        samples.append(int(line))
+    file.close()
+
+    t = np.linspace(0, 9, len(samples))
+
+    plt.plot(t, samples, marker='.')
+    plt.ylim((0, 4096))
+    plt.show()
+
+def plotDataOld(path):
+    file = open(path, 'r')
+    allLinesR = []
     lines = file.readlines()
     for line in lines:
         line = line.replace("\n", "")
         #line = line.replace(",", "")
-        allLines.append(int(line))
+        allLinesR.append(int(line))
     file.close()
-    plt.ylim((0, 4095))
-    plt.plot(allLines)
+
+    print(path)
+    det_num = path.name[1]
+    path_len = len(str(path))
+    path2 = (str(path)[:path_len - 6])
+    path2 += "D" + det_num + ".txt"
+    print(path2)
+
+    file = open(path2, 'r')
+    allLinesD = []
+    linesA = file.readlines()
+    for line in linesA:
+        line = line.replace("\n", "")
+        allLinesD.append(int(line))
+    file.close()
+
+    T = 8 # signal time
+    S = 4096
+    t_r = np.linspace(0, T, len(allLinesR)) 
+    t_d = np.linspace(0, T, len(allLinesD))
+    
+    fig, axs = plt.subplots(2,1)
+
+    axs[0].plot(t_r, allLinesR, label='Original', marker='.')
+    axs[0].set_ylim([0, 4095])
+    axs[0].legend()
+    axs[1].plot(t_d, allLinesD, label='Downsampled', marker='.')
+    axs[1].legend()
+    axs[1].set_ylim([0, 4095])
     plt.show()
 
 def plotFreqData(path):

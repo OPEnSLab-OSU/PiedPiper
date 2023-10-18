@@ -24,7 +24,7 @@
 
 
 // Detection algorithm settings:
-#define TGT_FREQ 150 // Primary (first harmonic) frequency of mating call to search for
+#define TGT_FREQ 100 // Primary (first harmonic) frequency of mating call to search for
 #define FREQ_MARGIN 25  // Margin for error of target frequency
 #define HARMONICS 1 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
 #define SIG_THRESH 1200 // Threshhold for magnitude of target frequency peak to be considered a positive detection
@@ -48,7 +48,7 @@
 #define AMP_SD 9
 
 #define LOG_INT 3600000 // Miliseconds between status logs [3600000]
-#define PLAYBACK_INT 120000 // Milliseconds between playback [900000]
+#define PLAYBACK_INT 30000 // Milliseconds between playback [900000]
 
 #define CTRL_IMG_INT 3600000
 #define IMG_TIME 300000
@@ -66,8 +66,11 @@
 
 volatile static bool pbs = false;
 
+static const int FFT_WIN_SIZE = int(WIN_SIZE) >> int(log(int(AUD_IN_DOWNSAMPLE_RATIO)) / log(2)); // Size of window used when performing fourier transform of incoming audio; must be a power of 2
+static const int FFT_SAMPLE_FREQ = int(AUD_IN_SAMPLE_FREQ) >> int(log(int(AUD_IN_DOWNSAMPLE_RATIO)) / log(2));
+
     // Volatile audio input buffer (LINEAR)
-volatile static short inputSampleBuffer[WIN_SIZE];
+volatile static short inputSampleBuffer[FFT_WIN_SIZE];
 volatile static int inputSampleBufferPtr = 0;
 static const int inputSampleDelayTime = 1000000 / AUD_IN_SAMPLE_FREQ;
 
@@ -87,29 +90,23 @@ static volatile float interpCoeffB = 0;
 static volatile float interpCoeffC = 0;
 static volatile float interpCoeffD = 0;
 
-static const int FFT_WIN_SIZE = int(WIN_SIZE) >> int(log(int(AUD_IN_DOWNSAMPLE_RATIO)) / log(2)); // Size of window used when performing fourier transform of incoming audio; must be a power of 2
-static const int FFT_SAMPLE_FREQ = int(AUD_IN_SAMPLE_FREQ) >> int(log(int(AUD_IN_DOWNSAMPLE_RATIO)) / log(2));
-
 static const int sincTableSizeDown = (2 * AUD_IN_DOWNSAMPLE_FILTER_SIZE + 1) * AUD_IN_DOWNSAMPLE_RATIO - AUD_IN_DOWNSAMPLE_RATIO + 1;
 static const int sincTableSizeUp = (2 * AUD_OUT_UPSAMPLE_FILTER_SIZE + 1) * AUD_OUT_UPSAMPLE_RATIO - AUD_OUT_UPSAMPLE_RATIO + 1;
 
 // tables holding values corresponding to sinc filter for band limited upsampling/downsampling
-static volatile float sincFilterTableDownsample[sincTableSizeDown];
-static volatile float sincFilterTableUpsample[sincTableSizeUp];
+static float sincFilterTableDownsample[sincTableSizeDown];
+static float sincFilterTableUpsample[sincTableSizeUp];
 
-    // circular input buffer for up sampling
+    // circular input buffer for downsampling
 static volatile short downsampleInput[sincTableSizeDown];
 static volatile int downsampleInputPtr = 0;
-static volatile int downsampleInputPtrCpy = downsampleInputPtr;
+// static volatile int downsampleInputPtrCpy = downsampleInputPtr;
 static volatile int downsampleInputC = 0;
 
-static volatile short downsampleOutput[FFT_WIN_SIZE];
-static volatile int downsampleOutputPtr = 0;
-
-    // circular input buffer for downsampling sampling
+    // circular input buffer for upsampling
 static volatile short upsampleInput[sincTableSizeUp];
 static volatile int upsampleInputPtr = 0;
-static volatile int upsampleInputPtrCpy = upsampleInputPtr;
+// static volatile int upsampleInputPtrCpy = upsampleInputPtr;
 static volatile int upsampleInputC = 0;
 
 class piedPiper {
@@ -119,17 +116,12 @@ class piedPiper {
     File data;
     
     // This must be an integer multiple of the window size:
-    static const int sampleCount = REC_TIME * AUD_IN_SAMPLE_FREQ + WIN_SIZE * TIME_AVG_WIN_COUNT; // [Number of samples required to comprise small + large frequency arrays]
+    static const int sampleCount = REC_TIME * FFT_SAMPLE_FREQ + FFT_WIN_SIZE * TIME_AVG_WIN_COUNT; // [Number of samples required to comprise small + large frequency arrays]
     static const int freqWinCount = REC_TIME * FFT_SAMPLE_FREQ / FFT_WIN_SIZE;
 
     // Samples array (CIRCULAR)
-    //short samples[sampleCount];
+    short samples[sampleCount];
     int samplePtr = 0;
-
-    static const int sampleDownsampledCount = sampleCount / AUD_IN_DOWNSAMPLE_RATIO;
-    // downsampled samples (CIRCULAR)
-    short samplesDownsampled[sampleDownsampledCount];
-    int sampleDownsampledPtr = 0;
 
     // Time smoothing spectral buffer  (CIRCULAR ALONG TIME)
     float rawFreqs[TIME_AVG_WIN_COUNT][FFT_WIN_SIZE / 2];

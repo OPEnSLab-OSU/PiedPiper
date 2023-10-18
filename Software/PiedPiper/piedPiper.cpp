@@ -22,11 +22,8 @@ void piedPiper::StopAudio()
 void piedPiper::StartAudioOutput()
 {
   //Serial.println("Restarting audio stream");
-  // long time = micros();
-  // OutputUpsampledSample();
-  // Serial.println(micros() - time);
   (*ISRStartFn)(outputSampleDelayTime, OutputUpsampledSample);
-  //(*ISRStartFn)(outputSampleDelayTime, OutputUpsampledSample);
+  //(*ISRStartFn)(outputSampleDelayTime, OutputSample);
 }
 
 // Used to restart the sample recording timer once SPI and Serial communications have completed.
@@ -42,25 +39,24 @@ void piedPiper::StartAudioInput()
 // If it is not full, it records a sample and moves the pointer over.
 void piedPiper::RecordSample(void)
 {
-  if (inputSampleBufferPtr < WIN_SIZE)
+  if (inputSampleBufferPtr < FFT_WIN_SIZE)
   {
-    int sample = analogRead(AUD_IN);
-    inputSampleBuffer[inputSampleBufferPtr++] = sample;
-
-    downsampleInputPtrCpy = downsampleInputPtr;
-    downsampleInput[downsampleInputPtr++] = sample;
-    downsampleInputC++;
+    // read sample into rolling downsampling input buffer
+    int downsampleInputPtrCpy = downsampleInputPtr;
+    downsampleInput[downsampleInputPtr++] = analogRead(AUD_IN);
     if (downsampleInputPtr == sincTableSizeDown) { downsampleInputPtr = 0; }
+    downsampleInputC++;
+    // performs downsampling every AUD_IN_DOWNSAMPLE_RATIO samples
     if (downsampleInputC == AUD_IN_DOWNSAMPLE_RATIO) {
       downsampleInputC = 0;
+      // calculate downsampled value using sinc filter table
       float downsampleSample = 0.0;
-      int currentSample = downsampleInputPtrCpy;
       for (int i = 0; i < sincTableSizeDown; i++) {
         downsampleSample += downsampleInput[downsampleInputPtrCpy++] * sincFilterTableDownsample[i];
         if (downsampleInputPtrCpy == sincTableSizeDown) { downsampleInputPtrCpy = 0; }
       }
-      downsampleOutput[downsampleOutputPtr++] = downsampleSample;
-      if (downsampleOutputPtr == FFT_WIN_SIZE) { downsampleOutputPtr = 0; }
+      // store downsampled value in input sample buffer
+      inputSampleBuffer[inputSampleBufferPtr++] = downsampleSample;
     }
   }
 }
@@ -98,7 +94,7 @@ void piedPiper::OutputUpsampledSample(void) {
 
   if (outputSampleBufferPtr == playbackSampleCount) { return; }
 
-  upsampleInputPtrCpy = upsampleInputPtr;
+  int upsampleInputPtrCpy = upsampleInputPtr;
   if (upsampleInputC == 0) {
     upsampleInput[upsampleInputPtr] = outputSampleBuffer[outputSampleBufferPtr++];
   } else {
@@ -204,16 +200,12 @@ bool piedPiper::LoadSound(char* fname) {
 void piedPiper::ProcessData()
 {
   //Quickly pull data from volatile buffer into sample buffer, iterating pointer as needed.
-  for (int i = 0; i < WIN_SIZE; i++)
+  for (int i = 0; i < FFT_WIN_SIZE; i++)
   {
-    //samples[samplePtr] = inputSampleBuffer[i];
-    //samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
-    if (i < FFT_WIN_SIZE) {
-      samplesDownsampled[sampleDownsampledPtr] = downsampleOutput[i];
-      sampleDownsampledPtr = IterateCircularBufferPtr(sampleDownsampledPtr, sampleDownsampledCount);
-      vReal[i] = downsampleOutput[i];
-      vImag[i] = 0.0;
-    }
+    samples[samplePtr] = inputSampleBuffer[i];
+    samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
+    vReal[i] = inputSampleBuffer[i];
+    vImag[i] = 0.0;
   }
 
   inputSampleBufferPtr = 0;
@@ -431,46 +423,26 @@ void piedPiper::SaveDetection()
 
   // Creates data file that stores the raw input data responsible for the detection. ==================================================================================================================
 
-  // char dir[24] = "/DATA/DETS/";
-  // char str[10];
-  // itoa(detectionNum, str, 9);
-  // strcat(dir, str);
-  // strcat(dir, ".txt");
+  char dir[24] = "/DATA/DETS/";
+  char str[10];
+  itoa(detectionNum, str, 9);
+  strcat(dir, str);
+  strcat(dir, ".txt");
 
-  // data = SD.open(dir, FILE_WRITE);
+  data = SD.open(dir, FILE_WRITE);
 
-  // for (int i = 0; i < sampleCount; i++)
-  // {
-  //   data.println(samples[samplePtr], DEC);
-  //   samples[samplePtr] = 0;
-  //   samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
-  // }
-
-  // samplePtr = 0;
-
-  // data.close();
-
-  // Creates second detection data file that stores the downsampled input data responsible for the detection. ==================================================================================================================
-
-  char dir1[24] = "/DATA/DETS/D";
-  char str1[10];
-  itoa(detectionNum, str1, 9);
-  strcat(dir1, str1);
-  strcat(dir1, ".txt");
-
-  data = SD.open(dir1, FILE_WRITE);
-
-  for (int i = 0; i < sampleDownsampledCount; i++)
+  for (int i = 0; i < sampleCount; i++)
   {
-    data.println(samplesDownsampled[sampleDownsampledPtr], DEC);
-    samplesDownsampled[sampleDownsampledPtr] = 0;
-    sampleDownsampledPtr = IterateCircularBufferPtr(sampleDownsampledPtr, sampleDownsampledCount);
+    data.println(samples[samplePtr], DEC);
+    samples[samplePtr] = 0;
+    samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
   }
-  sampleDownsampledPtr = 0;
+
+  samplePtr = 0;
 
   data.close();
 
-  // Creates a third detection data file that stores the processed frequency data responsible for the detection. ==================================================================================================================
+  // Creates a detection data file that stores the processed frequency data responsible for the detection. ==================================================================================================================
 
   char dir2[24] = "/DATA/DETS/F";
   char str2[10];

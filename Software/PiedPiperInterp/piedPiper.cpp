@@ -17,7 +17,7 @@ void piedPiper::StopAudio()
 void piedPiper::StartAudioOutput()
 {
   //Serial.println("Restarting audio stream");
-  (*ISRStartFn)(outputSampleDelayTime, OutputUpsampledSample);
+  (*ISRStartFn)(outputSampleDelayTime, OutputSample);
 }
 
 // Used to restart the sample recording timer once SPI and Serial communications have completed.
@@ -35,10 +35,9 @@ void piedPiper::RecordSample(void)
 {
   if (inputSampleBufferPtr < FFT_WIN_SIZE)
   {
-    // store last location in input buffer and read sample into rolling downsampling input buffer
+    // read sample into rolling downsampling input buffer
     int downsampleInputPtrCpy = downsampleInputPtr;
     downsampleInput[downsampleInputPtr++] = analogRead(AUD_IN);
-
     if (downsampleInputPtr == sincTableSizeDown) { downsampleInputPtr = 0; }
     downsampleInputC++;
     // performs downsampling every AUD_IN_DOWNSAMPLE_RATIO samples
@@ -797,7 +796,8 @@ void piedPiper::Playback() {
 
   StartAudioOutput();
 
-  while (outputSampleBufferPtr < playbackSampleCount) {}
+  while (outputSampleBufferPtr < playbackSampleCount - 2) {}
+  //while (outputSampleBufferPtr < playbackSampleCount) {}
 
   StopAudio();
 

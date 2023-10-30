@@ -12,9 +12,9 @@
 // Audio sampling settings:
 #define AUD_IN_SAMPLE_FREQ 4096 // Sampling frequency of incoming audio, must be at least twice the target frequency
 #define AUD_OUT_SAMPLE_FREQ 4096
-#define AUD_OUT_INTERP_RATIO 8
 #define AUD_IN_DOWNSAMPLE_RATIO 2 // sinc filter downsample ratio, ideally should be a power of 2
 #define AUD_IN_DOWNSAMPLE_FILTER_SIZE 8 // downsample sinc filter number of zero crossing, more crossings will produce a cleaner result but will also use more processor time 
+#define AUD_OUT_INTERP_RATIO 8
 #define AUD_OUT_UPSAMPLE_RATIO 8 // sinc filter upsample ratio, ideally should be a power of 2
 #define AUD_OUT_UPSAMPLE_FILTER_SIZE 5 // // upsample sinc filter number of zero crossings, more crossings will produce a cleaner result but will also use more processor time 
 #define AUD_OUT_TIME 8
@@ -24,8 +24,8 @@
 
 
 // Detection algorithm settings:
-#define TGT_FREQ 150 // Primary (first harmonic) frequency of mating call to search for
-#define FREQ_MARGIN 8  // Margin for error of target frequency
+#define TGT_FREQ 100 // Primary (first harmonic) frequency of mating call to search for
+#define FREQ_MARGIN 25  // Margin for error of target frequency
 #define HARMONICS 1 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
 #define SIG_THRESH 500 // Threshhold for magnitude of target frequency peak to be considered a positive detection
 #define EXP_SIGNAL_LEN 5 // Expected length of the mating call
@@ -65,8 +65,8 @@
 
 volatile static bool pbs = false;
 
-static const int FFT_WIN_SIZE = WIN_SIZE / AUD_IN_DOWNSAMPLE_RATIO; // int(WIN_SIZE) >> int(log(int(AUD_IN_DOWNSAMPLE_RATIO)) / log(2)); // Size of window used when performing fourier transform of incoming audio; must be a power of 2
-static const int FFT_SAMPLE_FREQ = AUD_IN_SAMPLE_FREQ / AUD_IN_DOWNSAMPLE_RATIO; // int(AUD_IN_SAMPLE_FREQ) >> int(log(int(AUD_IN_DOWNSAMPLE_RATIO)) / log(2));
+static const int FFT_WIN_SIZE = WIN_SIZE / AUD_IN_DOWNSAMPLE_RATIO; // Size of window used when performing fourier transform of incoming audio; must be a power of 2
+static const int FFT_SAMPLE_FREQ = AUD_IN_SAMPLE_FREQ / AUD_IN_DOWNSAMPLE_RATIO;
 
     // Volatile audio input buffer (LINEAR)
 volatile static short inputSampleBuffer[FFT_WIN_SIZE];
@@ -76,8 +76,8 @@ static const int inputSampleDelayTime = 1000000 / AUD_IN_SAMPLE_FREQ;
 volatile static short outputSampleBuffer[AUD_OUT_SAMPLE_FREQ * AUD_OUT_TIME];
 volatile static int outputSampleBufferPtr = 0;
 volatile static int outputSampleInterpCount = 0;
-//static const int outputSampleDelayTime = 1000000 / (AUD_OUT_SAMPLE_FREQ * AUD_OUT_INTERP_RATIO);
-static const int outputSampleDelayTime = 1000000 / (AUD_OUT_SAMPLE_FREQ * AUD_OUT_UPSAMPLE_RATIO);
+static const int outputSampleDelayTime = 1000000 / (AUD_OUT_SAMPLE_FREQ * AUD_OUT_INTERP_RATIO);
+//static const int outputSampleDelayTime = 1000000 / (AUD_OUT_SAMPLE_FREQ * AUD_OUT_UPSAMPLE_RATIO);
 volatile static int interpCount = 0;
 static volatile int playbackSampleCount = AUD_OUT_SAMPLE_FREQ * AUD_OUT_TIME;
 

@@ -28,11 +28,11 @@
 
 import os, wave, sys
 
-inFile = 'FPBT2.wav'
+inFile = 'trial26-resampled.wav'
 
 wfile = wave.open(inFile, 'rb')
 
-outFileName = 'FPBX.PAD'
+outFileName = 'BMSB.PAD'
 
 ratio = (2**12) / (2**16)
 offset = (2**12) / 2

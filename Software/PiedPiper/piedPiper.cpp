@@ -17,14 +17,14 @@ void piedPiper::StopAudio()
 void piedPiper::StartAudioOutput()
 {
   //Serial.println("Restarting audio stream");
-  (*ISRStartFn)(outputSampleDelayTime, OutputSample);
+  (*ISRStartFn)(outputSampleDelayTime, OutputUpsampledSample);
 }
 
 // Used to restart the sample recording timer once SPI and Serial communications have completed.
 void piedPiper::StartAudioInput()
 {
   //Serial.println("Restarting audio stream");
-  (*ISRStartFn)(inputSampleDelayTime, RecordSample);
+  if (USE_DETECTION) { (*ISRStartFn)(inputSampleDelayTime, RecordSample); }
 }
 
 // This records new audio samples into the sample buffer asyncronously using a hardware timer.
@@ -35,8 +35,24 @@ void piedPiper::RecordSample(void)
 {
   if (inputSampleBufferPtr < FFT_WIN_SIZE)
   {
-    inputSampleBuffer[inputSampleBufferPtr] = analogRead(AUD_IN);
-    inputSampleBufferPtr++;
+    // store last location in input buffer and read sample into rolling downsampling input buffer
+    int downsampleInputPtrCpy = downsampleInputPtr;
+    downsampleInput[downsampleInputPtr++] = analogRead(AUD_IN);
+
+    if (downsampleInputPtr == sincTableSizeDown) { downsampleInputPtr = 0; }
+    downsampleInputC++;
+    // performs downsampling every AUD_IN_DOWNSAMPLE_RATIO samples
+    if (downsampleInputC == AUD_IN_DOWNSAMPLE_RATIO) {
+      downsampleInputC = 0;
+      // calculate downsampled value using sinc filter table
+      float downsampleSample = 0.0;
+      for (int i = 0; i < sincTableSizeDown; i++) {
+        downsampleSample += downsampleInput[downsampleInputPtrCpy++] * sincFilterTableDownsample[i];
+        if (downsampleInputPtrCpy == sincTableSizeDown) { downsampleInputPtrCpy = 0; }
+      }
+      // store downsampled value in input sample buffer
+      inputSampleBuffer[inputSampleBufferPtr++] = downsampleSample;
+    }
   }
 }
 
@@ -66,6 +82,33 @@ void piedPiper::OutputSample(void) {
     nextOutputSample = max(0, min(4095, round(interpCoeffA * t * t * t + interpCoeffB * t * t + interpCoeffC * t + interpCoeffD)));
     pbs = true;
   }
+}
+
+void piedPiper::OutputUpsampledSample(void) {
+  analogWrite(AUD_OUT, nextOutputSample);
+
+  if (outputSampleBufferPtr == playbackSampleCount) { return; }
+
+  int upsampleInputPtrCpy = upsampleInputPtr;
+  if (upsampleInputC == 0) {
+    upsampleInput[upsampleInputPtr] = outputSampleBuffer[outputSampleBufferPtr++];
+  } else {
+    upsampleInput[upsampleInputPtr] = 0;
+  }
+  upsampleInputC += 1;
+  upsampleInputPtr += 1;
+  if (upsampleInputC == AUD_OUT_UPSAMPLE_RATIO) { upsampleInputC = 0; }
+  if (upsampleInputPtr == sincTableSizeUp) { upsampleInputPtr = 0; }
+
+  float upsampledSample = 0.0;
+  for (int i = 0; i < sincTableSizeUp; i++) {
+    upsampledSample += upsampleInput[upsampleInputPtrCpy++] * sincFilterTableUpsample[i];
+    if (upsampleInputPtrCpy == sincTableSizeUp) { upsampleInputPtrCpy = 0; }
+  }
+
+  nextOutputSample = max(0, min(4095, round(upsampledSample)));
+
+  pbs = true;
 }
 
 // Determines if the sample buffer is full, and is ready to have frequencies computed.
@@ -155,9 +198,9 @@ void piedPiper::ProcessData()
   for (int i = 0; i < FFT_WIN_SIZE; i++)
   {
     samples[samplePtr] = inputSampleBuffer[i];
+    samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
     vReal[i] = inputSampleBuffer[i];
     vImag[i] = 0.0;
-    samplePtr = IterateCircularBufferPtr(samplePtr, sampleCount);
   }
 
   inputSampleBufferPtr = 0;
@@ -230,6 +273,63 @@ void piedPiper::SmoothFreqs(int winSize)
   }
 }
 
+
+// calculates sinc filter table for downsampling a signal by @ratio
+// @nz is the number of zeroes to use for the table
+void piedPiper::calculateDownsamplSincFilterTable() {
+  int ratio = AUD_IN_DOWNSAMPLE_RATIO;
+  int nz = AUD_IN_DOWNSAMPLE_FILTER_SIZE;
+  // Build sinc function table for downsampling by @AUD_IN_DOWNSAMPLE_RATIO
+  int n = (2 * nz + 1) * ratio - ratio + 1;
+
+  float ns[n];
+  float ns_step = float(nz * ratio * 2) / (n - 1);
+
+  float t[n];
+  float t_step = 1.0 / (n - 1);
+
+  for (int i = 0; i < n; i++) {
+    ns[i] = float(-1.0 * nz * ratio) + ns_step * i;
+    t[i] = t_step * i;
+  }
+
+  for (int i = 0; i < n; i++) {
+    sincFilterTableDownsample[i] = (1.0 / ratio) * sin(PI * ns[i] / ratio) / (PI * ns[i] / ratio);
+  }
+  sincFilterTableDownsample[int(round((n - 1) / 2.0))] = 1.0 / ratio;
+  for (int i = 0; i < n; i++) {
+    sincFilterTableDownsample[i] = sincFilterTableDownsample[i] * 0.5 * (1.0 - cos(2.0 * PI * t[i]));
+  }
+}
+
+// calculates sinc filter table for upsampling a signal by @ratio
+// @nz is the number of zeroes to use for the table
+void piedPiper::calculateUpsampleSincFilterTable() {
+  int ratio = AUD_OUT_UPSAMPLE_RATIO;
+  int nz = AUD_OUT_UPSAMPLE_FILTER_SIZE;
+  // Build sinc function table for upsampling by @upsample_ratio
+  int n = (2 * nz + 1) * ratio - ratio + 1;
+
+  float ns[n];
+  float ns_step = float(nz * 2) / (n - 1);
+
+  float t[n];
+  float t_step = 1.0 / (n - 1);
+
+  for (int i = 0; i < n; i++) {
+    ns[i] = float(-1.0 * nz) + ns_step * i;
+    t[i] = t_step * i;
+  }
+
+  for (int i = 0; i < n; i++) {
+    sincFilterTableUpsample[i] = sin(PI * ns[i]) / (PI * ns[i]); 
+  }
+  sincFilterTableUpsample[int(round((n - 1) / 2.0))] = 1.0;
+  for (int i = 0; i < n; i++) {
+    sincFilterTableUpsample[i] = sincFilterTableUpsample[i] * 0.5 * (1.0 - cos(2.0 * PI * t[i]));
+  }
+}
+
 // This tests the cold frequency array for the conditions required for a positive detection.
 // A positive detection is made when at least [THRESHHOLD] frequency peaks of [THRESHHOLD] magnitudes are found in the target frequency harmonics.
 bool piedPiper::InsectDetection()
@@ -253,8 +353,8 @@ bool piedPiper::InsectDetection()
 // Determines if there is a peak in the target frequency range at a specific time window (including harmonics).
 bool piedPiper::CheckFreqDomain(int t)
 {
-  int lowerIdx = floor(((TGT_FREQ - FREQ_MARGIN) * 1.0) / AUD_IN_SAMPLE_FREQ * FFT_WIN_SIZE);
-  int upperIdx = ceil(((TGT_FREQ + FREQ_MARGIN) * 1.0) / AUD_IN_SAMPLE_FREQ * FFT_WIN_SIZE);
+  int lowerIdx = floor(((TGT_FREQ - FREQ_MARGIN) * 1.0) / FFT_SAMPLE_FREQ * FFT_WIN_SIZE);
+  int upperIdx = ceil(((TGT_FREQ + FREQ_MARGIN) * 1.0) / FFT_SAMPLE_FREQ * FFT_WIN_SIZE);
 
   int count = 0;
 
@@ -316,6 +416,8 @@ void piedPiper::SaveDetection()
 
   Wire.end();
 
+  // Creates data file that stores the raw input data responsible for the detection. ==================================================================================================================
+
   char dir[24] = "/DATA/DETS/";
   char str[10];
   itoa(detectionNum, str, 9);
@@ -333,9 +435,9 @@ void piedPiper::SaveDetection()
 
   samplePtr = 0;
 
-  // Creates second detection data file that stores the processed frequency data responsible for the detection. ==================================================================================================================
-
   data.close();
+
+  // Creates a detection data file that stores the processed frequency data responsible for the detection. ==================================================================================================================
 
   char dir2[24] = "/DATA/DETS/F";
   char str2[10];
@@ -358,9 +460,10 @@ void piedPiper::SaveDetection()
     data.println();
   }
 
+  data.close();
+
   // ===================================================================================================================================
 
-  data.close();
   SD.end();
   SPI.end();
 
@@ -393,6 +496,8 @@ void piedPiper::SaveDetection()
 // Takes a single photo, and records what time and detection it corresponds to
 bool piedPiper::TakePhoto(int n)
 {
+  if (USE_CAMERA_MODULE == 0) { return true; }
+  
   StopAudio();
 
 
@@ -566,6 +671,7 @@ bool piedPiper::TakePhoto(int n)
 
   StartAudioInput();
   return true;
+  
 }
 
 uint8_t piedPiper::read_fifo_burst(ArduCAM CameraModule)
@@ -691,13 +797,13 @@ void piedPiper::Playback() {
 
   StartAudioOutput();
 
-  while (outputSampleBufferPtr < (playbackSampleCount - 2)) {}
+  while (outputSampleBufferPtr < playbackSampleCount) {}
 
   StopAudio();
 
   //Serial.println("Finished playback ISR.\nShutting down amplifier...");
 
-  outputSampleBufferPtr = 2;
+  outputSampleBufferPtr = 0;
   outputSampleInterpCount = 0;
 
   digitalWrite(AMP_SD, LOW);

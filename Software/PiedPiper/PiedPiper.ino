@@ -24,8 +24,8 @@ unsigned long lastTime = 0;
 void setup() {
   // Begin serial communication and configure the analog read and write resolutions to their maximum possible values.
   Serial.begin(2000000);
-  analogReadResolution(12);
-  analogWriteResolution(12);
+  analogReadResolution(ANALOG_RES);
+  analogWriteResolution(ANALOG_RES);
   delay(4000);
 
   Serial.println("Initializing");

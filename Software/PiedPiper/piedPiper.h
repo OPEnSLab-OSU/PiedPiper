@@ -16,19 +16,16 @@
 #define AUD_OUT_TIME 8
 #define REC_TIME 8 // Number of seconds of audio to record when frequency test is positive
 #define FFT_WIN_SIZE 256 // Size of window used when performing fourier transform of incoming audio; must be a power of 2
+#define ANALOG_RES 12 // Resolution (in bits) of audio input and output
 // The product of sampleFreq and recordTime must be an integer multiple of winSize.
-
-#define SD_OPEN_ATTEMPT_COUNT 10
-#define SD_OPEN_RETRY_DELAY_MS 10
 
 // Detection algorithm settings:
 #define TGT_FREQ 175 // Primary (first harmonic) frequency of mating call to search for
 #define FREQ_MARGIN 25 // Margin for error of target frequency
 #define HARMONICS 1 // Number of harmonics to search for; looking for more than 3 is not recommended, because this can result in a high false-positive rate.
-#define SIG_THRESH 480 // Threshhold for magnitude of target frequency peak to be considered a positive detection
+#define SIG_THRESH 3.75 // Threshhold for magnitude of target frequency peak to be considered a positive detection (480 / 3.5)
 #define EXP_SIGNAL_LEN 5 // Expected length of the mating call
-#define EXP_DET_EFF 0.75 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
-#define NOISE_FLOOR_MULT 1.0 // uh
+#define EXP_DET_EFF 1 // Minimum expected efficiency by which the detection algorithm will detect target frequency peaks
 #define TIME_AVG_WIN_COUNT 8 // Number of frequency windows used to average frequencies across time
 
 #define SD_OPEN_ATTEMPT_COUNT 10
@@ -56,15 +53,13 @@
 
 #define SAVE_DETECTION_DELAY_TIME 2000
 
-#define DEBUG 1
-
-volatile static bool pbs = false;
-
-    // Volatile audio input buffer (LINEAR)
+// Volatile audio input buffer
 volatile static short inputSampleBuffer[FFT_WIN_SIZE];
 volatile static int inputSampleBufferPtr = 0;
 static const int inputSampleDelayTime = 1000000 / AUD_IN_SAMPLE_FREQ;
+const int analogRange = 2**ANALOG_RES;
 
+// Volatile audio output buffer & upsampling interpolation variables
 volatile static short outputSampleBuffer[AUD_OUT_SAMPLE_FREQ * AUD_OUT_TIME];
 volatile static int outputSampleBufferPtr = 0;
 volatile static int outputSampleInterpCount = 0;
@@ -72,13 +67,14 @@ static const int outputSampleDelayTime = 1000000 / (AUD_OUT_SAMPLE_FREQ * AUD_OU
 volatile static int interpCount = 0;
 static volatile int playbackSampleCount = AUD_OUT_SAMPLE_FREQ * AUD_OUT_TIME;
 
-static ArduCAM CameraModule(OV2640, CAM_CS );
-
 static volatile int nextOutputSample = 0;
 static volatile float interpCoeffA = 0;
 static volatile float interpCoeffB = 0;
 static volatile float interpCoeffC = 0;
 static volatile float interpCoeffD = 0;
+
+// Object used for interfacing with the camera module
+static ArduCAM CameraModule(OV2640, CAM_CS );
 
 class piedPiper {
   private:

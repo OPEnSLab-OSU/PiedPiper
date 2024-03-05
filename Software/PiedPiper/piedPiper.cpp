@@ -64,7 +64,6 @@ void piedPiper::OutputSample(void) {
     float t = (interpCount * 1.0) / AUD_OUT_INTERP_RATIO;
 
     nextOutputSample = max(0, min(4095, round(interpCoeffA * t * t * t + interpCoeffB * t * t + interpCoeffC * t + interpCoeffD)));
-    pbs = true;
   }
 }
 
@@ -170,6 +169,7 @@ void piedPiper::ProcessData()
 
   for (int i = 0; i < FFT_WIN_SIZE / 2; i++)
   {
+    //rawFreqs[rawFreqsPtr][i] = vReal[i];
     rawFreqs[rawFreqsPtr][i] = vReal[i];
     vReal[i] = 0.0;
   }
@@ -257,6 +257,8 @@ bool piedPiper::CheckFreqDomain(int t)
   int upperIdx = ceil(((TGT_FREQ + FREQ_MARGIN) * 1.0) / AUD_IN_SAMPLE_FREQ * FFT_WIN_SIZE);
 
   int count = 0;
+
+  const float scaledSigThresh = SIG_THRESH * FFT_WIN_SIZE / 2;
 
   for (int h = 1; h <= HARMONICS; h++)
   {

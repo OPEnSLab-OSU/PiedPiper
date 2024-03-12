@@ -7,6 +7,16 @@
 
         {
             "affiliation": "Openly Published Environmental Sensing (OPEnS) Lab, Department of Electrical Engineering and Computer Science, Oregon State University",
+            "name": "Andrew Ensinger"
+        },
+
+        {
+            "affiliation": "Openly Published Environmental Sensing (OPEnS) Lab, Department of Electrical Engineering and Computer Science, Oregon State University",
+            "name": "Nick Synytsia"
+        },
+
+        {
+            "affiliation": "Openly Published Environmental Sensing (OPEnS) Lab, Department of Electrical Engineering and Computer Science, Oregon State University",
             "name": "Elijah Shumway"
         },
 
@@ -15,7 +25,7 @@
             "name": "Kang, Kenneth"
         }
     ],
-    "description": "Pied Piper is an autonomous system for monitoring populations and activity patterns of insects that communicate through substrate-borne vibrations. It currently focuses on North American Alfalfa Treehoppers.",
+    "description": "Pied Piper is an autonomous system for monitoring populations and activity patterns of agricultural pest insects that communicate through substrate-borne vibrations. It currently focuses on North American Alfalfa Treehoppers.",
     "keywords": [
         "entomology", 
         "environment", 

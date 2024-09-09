@@ -1,4 +1,4 @@
-#include <arduinoFFTFloat.h>
+#include <arduinoFFTfloat.h>
 #include <Arduino.h>
 #include <SD.h>
 #include <SPI.h>
@@ -16,7 +16,6 @@
 #define AUD_OUT_TIME 8
 #define REC_TIME 8 // Number of seconds of audio to record when frequency test is positive
 #define FFT_WIN_SIZE 256 // Size of window used when performing fourier transform of incoming audio; must be a power of 2
-#define ANALOG_RES 12 // Resolution (in bits) of audio input and output
 // The product of sampleFreq and recordTime must be an integer multiple of winSize.
 
 // Detection algorithm settings:
@@ -57,8 +56,6 @@
 volatile static short inputSampleBuffer[FFT_WIN_SIZE];
 volatile static int inputSampleBufferPtr = 0;
 static const int inputSampleDelayTime = 1000000 / AUD_IN_SAMPLE_FREQ;
-const int analogRange = 2**ANALOG_RES;
-
 // Volatile audio output buffer & upsampling interpolation variables
 volatile static short outputSampleBuffer[AUD_OUT_SAMPLE_FREQ * AUD_OUT_TIME];
 volatile static int outputSampleBufferPtr = 0;
